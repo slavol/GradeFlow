@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS submitted_answers;
+DROP TABLE IF EXISTS results;
+DROP TABLE IF EXISTS answers;
+DROP TABLE IF EXISTS questions;
+DROP TABLE IF EXISTS quizzes;
+DROP TABLE IF EXISTS users;
