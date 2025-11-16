@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon server.js",
-    "db:init": "psql -d gradeflow -f sql/schema.sql",
-    "db:reset": "psql -d gradeflow -f sql/drop_all.sql && psql -d gradeflow -f sql/schema.sql"
+    "db:init": "psql -d gradeflow -f ../sql/schema.sql",
+    "db:reset": "psql -d gradeflow -f ../sql/drop_all.sql && psql -d gradeflow -f sql/schema.sql"
   },
   "keywords": [],
   "author": "",

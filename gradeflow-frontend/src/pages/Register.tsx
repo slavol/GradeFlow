@@ -7,6 +7,7 @@ export default function Register() {
   const [form, setForm] = useState<RegisterRequest>({
     email: "",
     password: "",
+    role: "student"              // <<--- rol default
   });
 
   const [done, setDone] = useState(false);
@@ -34,7 +35,7 @@ export default function Register() {
           Creează cont
         </h2>
         <p className="text-gray-600 text-center mb-6">
-          Alătură-te platformei <span className="font-semibold text-blue-600">GradeFlow</span>
+          Alege tipul contului și începe folosirea <span className="font-semibold text-blue-600">GradeFlow</span>
         </p>
 
         {done && (
@@ -46,6 +47,7 @@ export default function Register() {
         {/* FORMULAR */}
         <form onSubmit={handleSubmit} className="space-y-5">
 
+          {/* EMAIL */}
           <div>
             <label className="block text-gray-800 font-medium mb-1">
               Email
@@ -61,6 +63,7 @@ export default function Register() {
             />
           </div>
 
+          {/* PAROLA */}
           <div>
             <label className="block text-gray-800 font-medium mb-1">
               Parola
@@ -76,6 +79,24 @@ export default function Register() {
             />
           </div>
 
+          {/* SELECT ROLE */}
+          <div>
+            <label className="block text-gray-800 font-medium mb-2">
+              Înrolează-te ca:
+            </label>
+            
+            <select
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/80
+              focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition cursor-pointer"
+            >
+              <option value="student">Student</option>
+              <option value="professor">Profesor</option>
+            </select>
+          </div>
+
+          {/* SUBMIT */}
           <button
             type="submit"
             className="w-full py-3 bg-blue-600 text-white font-semibold rounded-xl 
