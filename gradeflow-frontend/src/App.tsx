@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+import Landing from "./pages/Landing/Landing";
+
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 
@@ -13,14 +15,13 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* Auth */}
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
         {/* Professor */}
         <Route path="/professor/dashboard" element={<ProfessorDashboard />} />
         <Route path="/professor/create-quiz" element={<CreateQuiz />} />
-
-       
         <Route path="/professor/quiz/:id" element={<ViewQuiz />} />
         <Route path="/professor/edit-quiz/:id" element={<EditQuiz />} /> 
       </Routes>

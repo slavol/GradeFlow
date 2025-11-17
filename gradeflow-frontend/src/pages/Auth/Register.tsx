@@ -1,16 +1,30 @@
 import { useState } from "react";
 import api from "../../api/api";
+import { useNavigate } from "react-router-dom";
 
 export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("student");
   const [done, setDone] = useState(false);
+  const navigate = useNavigate();
 
   const register = async (e: React.FormEvent) => {
     e.preventDefault();
-    await api.post("/auth/register", { email, password, role });
-    setDone(true);
+
+    try {
+      await api.post("/auth/register", { email, password, role });
+      setDone(true);
+
+      // 🔥 Redirect după 1 secundă
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
+
+    } catch (err) {
+      console.error(err);
+      alert("Eroare la crearea contului");
+    }
   };
 
   return (
@@ -29,7 +43,9 @@ export default function Register() {
         <h2 className="text-3xl font-semibold text-center">Creează cont</h2>
 
         {done && (
-          <p className="text-green-300 text-center mt-3">Cont creat! Acum te poți loga.</p>
+          <p className="text-green-300 text-center mt-3">
+            Cont creat! Te redirecționăm către login...
+          </p>
         )}
 
         <input

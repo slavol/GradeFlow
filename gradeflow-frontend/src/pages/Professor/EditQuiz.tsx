@@ -13,6 +13,7 @@ interface Question {
   title: string;
   question_type: "single" | "multiple";
   options: Option[];
+  position?: number;
 }
 
 export default function EditQuiz() {
@@ -25,17 +26,27 @@ export default function EditQuiz() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 1️⃣ Încarcă quiz-ul
+  // pentru drag and drop
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  /** -----------------------------------------------------
+   * 1️⃣ Încarcă QUIZ + întrebări
+   * ----------------------------------------------------- */
   const loadQuiz = async () => {
     try {
       const res = await api.get(`/professor/quiz/${id}`);
-      const q = res.data;
 
-      setTitle(q.title);
-      setDescription(q.description);
-      setTimeLimit(q.time_limit);
-      setQuestions(q.questions);
+      setTitle(res.data.title);
+      setDescription(res.data.description);
+      setTimeLimit(res.data.time_limit);
 
+      // setăm poziția (fallback dacă nu există)
+      const ordered = res.data.questions.map((q: Question, index: number) => ({
+        ...q,
+        position: q.position ?? index
+      }));
+
+      setQuestions(ordered);
       setLoading(false);
     } catch (err) {
       console.error(err);
@@ -47,7 +58,34 @@ export default function EditQuiz() {
     loadQuiz();
   }, []);
 
-  // 2️⃣ Adaugă întrebare
+  /** -----------------------------------------------------
+   * 2️⃣ Drag & Drop reorder întrebări
+   * ----------------------------------------------------- */
+  const handleDragStart = (index: number) => {
+    setDragIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (index: number) => {
+    if (dragIndex === null) return;
+
+    const updated = [...questions];
+    const moved = updated.splice(dragIndex, 1)[0];
+    updated.splice(index, 0, moved);
+
+    // actualizăm pozițiile
+    updated.forEach((q, i) => (q.position = i));
+
+    setQuestions(updated);
+    setDragIndex(null);
+  };
+
+  /** -----------------------------------------------------
+   * 3️⃣ Adăugare / Ștergere întrebare și opțiuni
+   * ----------------------------------------------------- */
   const addQuestion = () => {
     setQuestions([
       ...questions,
@@ -57,73 +95,74 @@ export default function EditQuiz() {
         options: [
           { text: "", is_correct: false },
           { text: "", is_correct: false }
-        ]
+        ],
+        position: questions.length
       }
     ]);
   };
 
-  // 3️⃣ Adaugă opțiune
+  const deleteQuestion = (index: number) => {
+    const updated = [...questions];
+    updated.splice(index, 1);
+
+    updated.forEach((q, i) => (q.position = i));
+    setQuestions(updated);
+  };
+
   const addOption = (qIndex: number) => {
     const updated = [...questions];
     updated[qIndex].options.push({ text: "", is_correct: false });
     setQuestions(updated);
   };
 
-  // 4️⃣ Șterge opțiune
   const deleteOption = (qIndex: number, oIndex: number) => {
     const updated = [...questions];
     updated[qIndex].options.splice(oIndex, 1);
     setQuestions(updated);
   };
 
-  // 5️⃣ Șterge întrebare
-  const deleteQuestion = (qIndex: number) => {
-    const updated = [...questions];
-    updated.splice(qIndex, 1);
-    setQuestions(updated);
-  };
-
-  // 6️⃣ Salvează modificările
+  /** -----------------------------------------------------
+   * 4️⃣ Salvare în backend
+   * ----------------------------------------------------- */
   const saveQuiz = async () => {
     try {
-      // update quiz meta
       await api.put(`/professor/quiz/${id}`, {
         title,
         description,
         time_limit: timeLimit
       });
 
-      // update questions
       await api.put(`/professor/quiz/${id}/questions`, {
         questions
       });
 
       alert("Quiz actualizat cu succes!");
-      navigate("/professor/dashboard");
-
+      navigate(`/professor/quiz/${id}`);
     } catch (err) {
       console.error(err);
       alert("Eroare la salvare");
     }
   };
 
-
+  /** -----------------------------------------------------
+   * 5️⃣ UI
+   * ----------------------------------------------------- */
   if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-700">
-        Se încarcă quiz-ul...
+        Se încarcă...
       </div>
     );
 
   return (
     <div className="min-h-screen bg-gray-100 px-6 py-10">
       <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-2xl p-8 border border-gray-200">
-        
+
         <h1 className="text-3xl font-bold text-gray-800">Editează Quiz</h1>
 
+        {/* ---------------- QUIZ META ---------------- */}
         <div className="mt-8 space-y-6">
 
-          {/* TITLU */}
           <div>
             <label className="block text-gray-700 font-medium">Titlu quiz</label>
             <input
@@ -133,7 +172,6 @@ export default function EditQuiz() {
             />
           </div>
 
-          {/* DESCRIERE */}
           <div>
             <label className="block text-gray-700 font-medium">Descriere</label>
             <textarea
@@ -143,7 +181,6 @@ export default function EditQuiz() {
             />
           </div>
 
-          {/* LIMITA DE TIMP */}
           <div>
             <label className="block text-gray-700 font-medium mb-1">
               Limită de timp (minute)
@@ -172,7 +209,7 @@ export default function EditQuiz() {
 
           <hr className="my-6" />
 
-          {/* LISTA ÎNTREBĂRI */}
+          {/* ---------------- ÎNTREBĂRI ---------------- */}
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-gray-800">Întrebări</h2>
             <button
@@ -183,25 +220,37 @@ export default function EditQuiz() {
             </button>
           </div>
 
-          <div className="space-y-10 mt-4">
-            {questions.map((q, qIndex) => (
-              <div key={qIndex} className="p-6 bg-gray-50 rounded-xl border relative">
-                
+          <div className="space-y-8 mt-4">
+            {questions.map((q, index) => (
+              <div
+                key={index}
+                className="p-6 bg-gray-50 rounded-xl border relative"
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragOver={handleDragOver}
+                onDrop={() => handleDrop(index)}
+              >
+                {/* Handle reorder */}
+                <div className="absolute left-3 top-3 text-gray-400 cursor-grab">
+                  ☰
+                </div>
+
+                {/* Delete question */}
                 <button
-                  onClick={() => deleteQuestion(qIndex)}
-                  className="absolute top-3 right-3 text-red-500 hover:text-red-700"
+                  onClick={() => deleteQuestion(index)}
+                  className="absolute top-0.5 right-2 text-red-500 hover:text-red-700"
                 >
                   ✕
                 </button>
 
-                <div className="flex gap-4">
+                <div className="flex gap-4 ml-6">
                   <input
                     className="w-full p-3 border rounded-lg"
                     placeholder="Titlu întrebare"
                     value={q.title}
                     onChange={(e) => {
                       const updated = [...questions];
-                      updated[qIndex].title = e.target.value;
+                      updated[index].title = e.target.value;
                       setQuestions(updated);
                     }}
                   />
@@ -211,7 +260,7 @@ export default function EditQuiz() {
                     value={q.question_type}
                     onChange={(e) => {
                       const updated = [...questions];
-                      updated[qIndex].question_type =
+                      updated[index].question_type =
                         e.target.value as "single" | "multiple";
                       setQuestions(updated);
                     }}
@@ -221,22 +270,22 @@ export default function EditQuiz() {
                   </select>
                 </div>
 
+                {/* Options */}
                 <div className="mt-4 ml-2 space-y-3">
                   {q.options.map((opt, oIndex) => (
                     <div key={oIndex} className="flex items-center gap-3 relative">
-
                       <input
                         type={q.question_type === "single" ? "radio" : "checkbox"}
-                        name={`q-${qIndex}`}
+                        name={`q-${index}`}
                         checked={opt.is_correct}
                         onChange={(e) => {
                           const updated = [...questions];
 
                           if (q.question_type === "single") {
-                            updated[qIndex].options.forEach((o) => (o.is_correct = false));
+                            updated[index].options.forEach((o) => (o.is_correct = false));
                           }
 
-                          updated[qIndex].options[oIndex].is_correct = e.target.checked;
+                          updated[index].options[oIndex].is_correct = e.target.checked;
                           setQuestions(updated);
                         }}
                       />
@@ -247,13 +296,13 @@ export default function EditQuiz() {
                         value={opt.text}
                         onChange={(e) => {
                           const updated = [...questions];
-                          updated[qIndex].options[oIndex].text = e.target.value;
+                          updated[index].options[oIndex].text = e.target.value;
                           setQuestions(updated);
                         }}
                       />
 
                       <button
-                        onClick={() => deleteOption(qIndex, oIndex)}
+                        onClick={() => deleteOption(index, oIndex)}
                         className="text-red-500 hover:text-red-700"
                       >
                         🗑
@@ -262,13 +311,12 @@ export default function EditQuiz() {
                   ))}
 
                   <button
-                    onClick={() => addOption(qIndex)}
+                    onClick={() => addOption(index)}
                     className="mt-3 px-3 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg"
                   >
                     + Adaugă opțiune
                   </button>
                 </div>
-
               </div>
             ))}
           </div>
