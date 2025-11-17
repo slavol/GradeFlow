@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon server.js",
-    "db:init": "psql -d gradeflow -f ../sql/schema.sql",
-    "db:reset": "psql -d gradeflow -f ../sql/drop_all.sql && psql -d gradeflow -f sql/schema.sql"
+    "dev":"nodemon server.js",
+    "db:schema": "psql -U slavoliu -d gradeflow -f ./src/models/schema.sql",
+    "db:drop": "psql -U slavoliu -d gradeflow -f ./src/models/drop.sql",
+    "db:reset": "npm run db:drop && npm run db:schema"
   },
   "keywords": [],
   "author": "",
