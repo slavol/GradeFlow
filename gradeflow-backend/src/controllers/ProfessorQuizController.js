@@ -1,5 +1,6 @@
 const QuizRepository = require("../repositories/QuizRepository");
 const QuestionRepository = require("../repositories/QuestionRepository");
+const SessionRepository = require("../repositories/SessionRepository");
 
 module.exports = {
   createQuiz: async (req, res) => {
@@ -92,6 +93,24 @@ module.exports = {
 
     } catch (err) {
       console.error("❌ updateQuiz error:", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  },
+
+  startSession: async (req, res) => {
+    try {
+      const quizId = req.params.id;
+      const professorId = req.user.id;
+
+      const session = await SessionRepository.createSession(quizId, professorId);
+
+      res.json({
+        message: "Session started",
+        session
+      });
+
+    } catch (err) {
+      console.error("❌ startSession error:", err);
       res.status(500).json({ message: "Server error" });
     }
   }

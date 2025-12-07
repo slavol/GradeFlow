@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api/api";
+import { useNavigate } from "react-router-dom";
 
 interface Quiz {
   id: number;
@@ -39,6 +40,13 @@ export default function ProfessorDashboard() {
     loadQuizzes();
   }, []);
 
+  const navigate = useNavigate();
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
+  };
+
   return (
     <div className="min-h-screen bg-[#f7f8fc] p-8">
       {/* Header */}
@@ -50,12 +58,26 @@ export default function ProfessorDashboard() {
           </p>
         </div>
 
-        <a
-          href="/professor/create-quiz"
-          className="px-6 py-3 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition"
-        >
-          + Creează un Quiz
-        </a>
+        <div className="flex items-center gap-4">
+          {/* Creează Quiz */}
+          <a
+            href="/professor/create-quiz"
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition"
+          >
+            + Creează un Quiz
+          </a>
+
+          {/* Logout */}
+          <button
+            onClick={() => {
+              localStorage.removeItem("token");
+              window.location.href = "/";
+            }}
+            className="px-6 py-3 bg-red-600 text-white rounded-xl shadow hover:bg-red-700 transition"
+          >
+            Logout
+          </button>
+        </div>
       </header>
 
       {/* Stats */}
@@ -123,6 +145,12 @@ export default function ProfessorDashboard() {
           </table>
         )}
       </div>
+      <a
+        href="/professor/sessions"
+        className="block mt-6 px-5 py-3 bg-purple-600 text-white rounded-xl text-center hover:bg-purple-700"
+      >
+        📊 Vezi sesiuni susținute
+      </a>
     </div>
   );
 }

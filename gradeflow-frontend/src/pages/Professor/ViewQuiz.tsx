@@ -23,20 +23,20 @@ export default function ViewQuiz() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
 
- const loadQuiz = async () => {
-  try {
-    const res = await api.get(`/professor/quiz/${id}`);
-    console.log("QUIZ RESPONSE:", res.data);
+  const loadQuiz = async () => {
+    try {
+      const res = await api.get(`/professor/quiz/${id}`);
+      console.log("QUIZ RESPONSE:", res.data);
 
-    setQuiz(res.data);
-    setQuestions(res.data.questions);
-  } catch (err) {
-    console.error(err);
-    alert("Eroare la încărcarea quiz-ului");
-  } finally {
-    setLoading(false);
-  }
-};
+      setQuiz(res.data);
+      setQuestions(res.data.questions);
+    } catch (err) {
+      console.error(err);
+      alert("Eroare la încărcarea quiz-ului");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadQuiz();
@@ -55,6 +55,17 @@ export default function ViewQuiz() {
 
   if (loading) return <div className="p-10 text-center">Se încarcă...</div>;
   if (!quiz) return <div className="p-10 text-center">Quiz inexistent.</div>;
+
+  const startSession = async () => {
+    try {
+      const res = await api.post(`/professor/quiz/${id}/start`);
+      const session = res.data.session;
+      navigate(`/professor/session/${session.id}`);
+    } catch (err) {
+      console.error(err);
+      alert("Eroare la pornirea sesiunii");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f4f6fc] p-8">
@@ -141,11 +152,10 @@ export default function ViewQuiz() {
                     {q.options.map((opt) => (
                       <div
                         key={opt.id}
-                        className={`p-3 rounded-lg border ${
-                          opt.is_correct
-                            ? "bg-green-100 border-green-300"
-                            : "bg-white"
-                        }`}
+                        className={`p-3 rounded-lg border ${opt.is_correct
+                          ? "bg-green-100 border-green-300"
+                          : "bg-white"
+                          }`}
                       >
                         {opt.text}
                       </div>
@@ -173,6 +183,13 @@ export default function ViewQuiz() {
             className="px-5 py-3 bg-gray-300 rounded-xl hover:bg-gray-400"
           >
             ⬅ Înapoi la Dashboard
+          </button>
+
+          <button
+            onClick={startSession}
+            className="px-5 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700"
+          >
+            ▶ Pornește sesiunea live
           </button>
         </div>
       </div>

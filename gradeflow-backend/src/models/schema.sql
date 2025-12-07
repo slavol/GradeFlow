@@ -74,3 +74,47 @@ CREATE TABLE quiz_answers (
 -- ==========================
 INSERT INTO users (email, password, role)
 VALUES ('prof@test.com', 'parola123', 'professor');
+
+CREATE TABLE quiz_sessions (
+    id SERIAL PRIMARY KEY,
+    quiz_id INT REFERENCES quizzes(id) ON DELETE CASCADE,
+    professor_id INT REFERENCES users(id) ON DELETE CASCADE,
+    session_code TEXT UNIQUE NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active', -- active, closed
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE session_participants (
+    id SERIAL PRIMARY KEY,
+    session_id INT REFERENCES quiz_sessions(id) ON DELETE CASCADE,
+    student_id INT REFERENCES users(id) ON DELETE CASCADE,
+    joined_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE responses (
+    id SERIAL PRIMARY KEY,
+    session_id INT REFERENCES quiz_sessions(id) ON DELETE CASCADE,
+    student_id INT REFERENCES users(id) ON DELETE CASCADE,
+    question_id INT REFERENCES questions(id) ON DELETE CASCADE,
+    selected_options INT[],
+    is_correct BOOLEAN,
+    answered_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE student_sessions (
+  id SERIAL PRIMARY KEY,
+  session_id INTEGER REFERENCES quiz_sessions(id) ON DELETE CASCADE,
+  student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  score INTEGER DEFAULT 0,
+  completed BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE student_answers (
+  id SERIAL PRIMARY KEY,
+  student_session_id INTEGER REFERENCES student_sessions(id) ON DELETE CASCADE,
+  question_id INTEGER REFERENCES questions(id) ON DELETE CASCADE,
+  option_id INTEGER REFERENCES options(id) ON DELETE CASCADE,
+  is_correct BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW()
+);
