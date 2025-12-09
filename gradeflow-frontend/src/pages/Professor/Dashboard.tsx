@@ -11,12 +11,20 @@ interface Quiz {
   created_at: string;
 }
 
+interface Stats {
+  total_quizzes: number;
+  total_questions: number;
+  total_students: number;
+}
+
 export default function ProfessorDashboard() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
+  // LOAD QUIZZES LIST
   const loadQuizzes = async () => {
     try {
       const res = await api.get("/professor/list");
@@ -28,10 +36,24 @@ export default function ProfessorDashboard() {
         localStorage.removeItem("token");
         navigate("/login");
       }
-    } finally {
-      setLoading(false);
     }
   };
+
+  // LOAD DASHBOARD STATS
+  const loadStats = async () => {
+    try {
+      const res = await api.get("/professor/stats");
+      setStats(res.data);
+    } catch (err) {
+      console.error("STATS ERROR:", err);
+    }
+  };
+
+  useEffect(() => {
+    Promise.all([loadQuizzes(), loadStats()]).finally(() =>
+      setLoading(false)
+    );
+  }, []);
 
   const deleteQuiz = async (id: number) => {
     if (!confirm("Sigur vrei să ștergi acest quiz?")) return;
@@ -39,15 +61,12 @@ export default function ProfessorDashboard() {
     try {
       await api.delete(`/professor/delete/${id}`);
       loadQuizzes();
+      loadStats();
     } catch (err) {
       console.error(err);
       alert("Eroare la ștergere");
     }
   };
-
-  useEffect(() => {
-    loadQuizzes();
-  }, []);
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -84,9 +103,9 @@ export default function ProfessorDashboard() {
 
       {/* Stats */}
       <div className="grid md:grid-cols-3 gap-6 mb-10">
-        <StatCard title="Quiz-uri create" value={quizzes.length} />
-        <StatCard title="Studenți evaluați" value="—" />
-        <StatCard title="Întrebări totale" value="—" />
+        <StatCard title="Quiz-uri create" value={stats?.total_quizzes ?? "—"} />
+        <StatCard title="Studenți evaluați" value={stats?.total_students ?? "—"} />
+        <StatCard title="Întrebări totale" value={stats?.total_questions ?? "—"} />
       </div>
 
       {/* QUIZ LIST */}

@@ -27,9 +27,6 @@ export default function StudentResults() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // =====================================================
-  // LOAD RESULTS FROM BACKEND
-  // =====================================================
   const loadResults = async () => {
     try {
       const res = await api.get(`/student/session/${sessionId}/results`);
@@ -56,6 +53,16 @@ export default function StudentResults() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
+
+      {/* BACK BUTTON */}
+      <div className="max-w-3xl mx-auto mb-4">
+        <button
+          onClick={() => navigate("/student/dashboard")}
+          className="mb-6 px-5 py-2 bg-gray-700 text-white rounded-xl hover:bg-gray-800 transition"
+        >
+          ← Înapoi la Dashboard
+        </button>
+      </div>
 
       {/* SCORE CARD */}
       <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-2xl p-8 mb-10 text-center border">
@@ -102,9 +109,7 @@ export default function StudentResults() {
 
                 <p className="text-sm">
                   <strong>Răspuns corect:</strong>{" "}
-                  {a.correct_answers
-                    .map((ans) => ans.text)
-                    .join(", ")}
+                  {a.correct_answers.map((ans) => ans.text).join(", ")}
                 </p>
 
                 <p

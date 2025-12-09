@@ -53,6 +53,15 @@ class QuizRepository {
     );
     return result.rows[0];
   }
+
+  static async findSessionById(sessionId) {
+  const res = await pool.query(
+    `SELECT * FROM quiz_sessions WHERE id = $1`,
+    [sessionId]
+  );
+
+  return res.rows[0] || null;
+}
 }
 
 module.exports = QuizRepository;

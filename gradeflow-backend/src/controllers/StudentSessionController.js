@@ -248,34 +248,34 @@ module.exports = {
 
       // match each question + correct option + student's selection
       const detailedResults = await Promise.all(
-  questions.map(async (q) => {
-    const opts = await StudentSessionRepo.getQuestionOptions(q.id);
+        questions.map(async (q) => {
+          const opts = await StudentSessionRepo.getQuestionOptions(q.id);
 
-    const correct = opts.filter(o => o.is_correct);
-    const answer = answers.find(a => a.question_id === q.id);
+          const correct = opts.filter(o => o.is_correct);
+          const answer = answers.find(a => a.question_id === q.id);
 
-    const selected = answer
-      ? await StudentSessionRepo.getOptionTexts(answer.selected_option_ids)
-      : [];
+          const selected = answer
+            ? await StudentSessionRepo.getOptionTexts(answer.selected_option_ids)
+            : [];
 
-    return {
-      question_id: q.id,
-      question_text: q.title,
+          return {
+            question_id: q.id,
+            question_text: q.title,
 
-      correct_answers: correct.map(o => ({
-        id: o.id,
-        text: o.text
-      })),
+            correct_answers: correct.map(o => ({
+              id: o.id,
+              text: o.text
+            })),
 
-      selected_answers: selected.map(o => ({
-        id: o.id,
-        text: o.text
-      })),
+            selected_answers: selected.map(o => ({
+              id: o.id,
+              text: o.text
+            })),
 
-      is_correct: answer?.is_correct || false
-    };
-  })
-);
+            is_correct: answer?.is_correct || false
+          };
+        })
+      );
 
       // 4. leaderboard
       const leaderboard = await StudentSessionRepo.getLeaderboard(sessionId);
@@ -292,5 +292,22 @@ module.exports = {
       console.error("GET RESULTS ERROR:", err);
       return res.status(500).json({ error: "Server error." });
     }
+  },
+  
+  async getHistory(req, res) {
+  try {
+    const studentId = req.user.id;
+
+    const history = await StudentSessionRepo.getStudentHistory(studentId);
+
+    return res.json({
+      success: true,
+      history
+    });
+
+  } catch (err) {
+    console.error("GET HISTORY ERROR:", err);
+    return res.status(500).json({ error: "Server error." });
   }
+}
 };

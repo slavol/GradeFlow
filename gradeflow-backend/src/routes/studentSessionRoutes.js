@@ -17,6 +17,14 @@ router.post(
   StudentSessionController.joinSession
 );
 
+// GET /student/session/history
+router.get(
+  "/history",
+  auth,
+  requireRole("student"),
+  StudentSessionController.getHistory
+);
+
 // GET /student/session/:id  → ia întrebarea curentă + status sesiune
 router.get(
   "/:id",
@@ -39,5 +47,6 @@ router.get(
   requireRole("student"),
   StudentSessionController.getResults
 );
+
 
 module.exports = router;

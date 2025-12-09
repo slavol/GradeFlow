@@ -1,5 +1,9 @@
 const db = require("../db/database");
 const SessionRepository = require("../repositories/SessionRepository");
+const StudentSessionRepo = require("../repositories/StudentSessionRepository"); // 👈 NECESAR
+const QuizRepository = require("../repositories/QuizRepository"); // 👈 NECESAR
+
+const { Parser } = require("json2csv");
 
 module.exports = {
 
@@ -32,11 +36,9 @@ module.exports = {
     try {
       const sessionId = req.params.id;
 
-      // session + quiz info
       const session = await SessionRepository.getSessionWithQuiz(sessionId);
       if (!session) return res.status(404).json({ error: "Session not found" });
 
-      // list all students & their score (live scoreboard)
       const studentsRes = await db.query(
         `SELECT 
             ss.id AS student_session_id,
@@ -79,4 +81,54 @@ module.exports = {
       return res.status(500).json({ error: "Server error" });
     }
   },
+
+  // =====================================================
+  // EXPORT CSV
+  // =====================================================
+  async exportCSV(req, res) {
+    try {
+      const sessionId = req.params.id;
+      const professorId = req.user.id;
+
+      // verificăm dacă sesiunea aparține profesorului
+      const session = await QuizRepository.findSessionById(sessionId);
+
+      if (!session || session.professor_id !== professorId) {
+        return res.status(403).json({ error: "Nu ai acces la această sesiune." });
+      }
+
+      // leaderboard cu scorurile
+      const leaderboard = await StudentSessionRepo.getLeaderboard(sessionId);
+
+      if (!leaderboard || leaderboard.length === 0) {
+        return res.status(404).json({ error: "Nu există rezultate pentru export." });
+      }
+
+      // pregătim datele pentru CSV
+      const data = leaderboard.map((row) => ({
+        email: row.email,
+        score: row.score,
+        completed: row.completed ? "DA" : "NU",
+        finished_at: row.finished_at || "—",
+      }));
+
+      const fields = ["email", "score", "completed", "finished_at"];
+      const parser = new Parser({ fields });
+      const csv = parser.parse(data);
+
+      // setăm header-ele pentru download
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="session_${sessionId}_results.csv"`
+      );
+
+      return res.send(csv);
+
+    } catch (err) {
+      console.error("EXPORT CSV ERROR:", err);
+      return res.status(500).json({ error: "Eroare server." });
+    }
+  },
+
 };

@@ -52,4 +52,11 @@ router.delete(
   ProfessorSessionHistoryController.deleteSession
 );
 
+router.get(
+  "/session/:id/export",
+  auth,
+  requireRole("professor"),
+  ProfessorSessionController.exportCSV
+);
+
 module.exports = router;

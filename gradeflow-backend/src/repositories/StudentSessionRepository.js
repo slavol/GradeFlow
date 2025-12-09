@@ -249,6 +249,33 @@ class StudentSessionRepository {
     return res.rows;
   }
 
+// =====================================================
+// GET STUDENT RESULT HISTORY
+// =====================================================
+static async getStudentHistory(studentId) {
+  const res = await pool.query(
+    `
+    SELECT 
+      ss.id AS student_session_id,
+      ss.session_id,
+      ss.score,
+      ss.completed,
+      ss.finished_at,
+      q.title AS quiz_title,
+      q.id AS quiz_id
+    FROM student_sessions ss
+    JOIN quiz_sessions qs ON ss.session_id = qs.id
+    JOIN quizzes q ON qs.quiz_id = q.id
+    WHERE ss.student_id = $1
+    ORDER BY ss.finished_at DESC NULLS LAST
+    `,
+    [studentId]
+  );
+
+  return res.rows;
+}
+
+
 
 }
 

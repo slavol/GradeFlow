@@ -30,7 +30,6 @@ type SessionData = {
   analytics: QuestionAnalytics[];
 };
 
-// ===== COMPONENT =====
 export default function SessionResults() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -38,10 +37,12 @@ export default function SessionResults() {
   const [data, setData] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // =====================================================
+  // LOAD SESSION RESULTS
+  // =====================================================
   const loadResults = async () => {
     try {
       const res = await api.get(`/professor/session/${id}/results`);
-      console.log("RESULTS:", res.data);
 
       setData({
         session: res.data.session,
@@ -60,6 +61,28 @@ export default function SessionResults() {
     loadResults();
   }, []);
 
+  // =====================================================
+  // EXPORT CSV (Axios + blob = NO 401 error)
+  // =====================================================
+  const handleCSVDownload = async () => {
+    try {
+      const res = await api.get(`/professor/session/${id}/export`, {
+        responseType: "blob", // <-- IMPORTANT
+      });
+
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.setAttribute("download", `session_${id}_results.csv`);
+      document.body.appendChild(link);
+      link.click();
+    } catch (err) {
+      console.error("CSV EXPORT ERROR:", err);
+      alert("Nu s-a putut descărca fișierul CSV.");
+    }
+  };
+
   if (loading)
     return <div className="p-10 text-center">Se încarcă rezultatele...</div>;
 
@@ -73,38 +96,50 @@ export default function SessionResults() {
   const avgScore =
     completed > 0
       ? Math.round(
-          students.reduce((acc, cur) => acc + (cur.completed ? cur.score : 0), 0) /
-            completed
+          students.reduce(
+            (acc, cur) => acc + (cur.completed ? cur.score : 0),
+            0
+          ) / completed
         )
       : 0;
 
   return (
     <div className="min-h-screen bg-[#f4f6fc] p-8">
 
-      {/* ===== HEADER ===== */}
+      {/* HEADER */}
       <div className="max-w-5xl mx-auto bg-white shadow-xl rounded-2xl p-8 border border-gray-200">
 
-        <div className="flex justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">Rezultate sesiune</h1>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Rezultate sesiune</h1>
+
+            <p className="text-gray-500 mt-1">
+              Quiz #{session.quiz_id} • {total} participanți
+            </p>
+          </div>
 
           <div className="text-right">
             <p className="text-gray-600">Cod sesiune:</p>
             <p className="font-mono text-xl font-bold">{session.session_code}</p>
+
+            {/* EXPORT CSV BUTTON */}
+            <button
+              onClick={handleCSVDownload}
+              className="mt-3 inline-block px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition"
+            >
+              📥 Export CSV
+            </button>
           </div>
         </div>
 
-        <p className="text-gray-500 mt-1">
-          Quiz #{session.quiz_id} • {total} participanți
-        </p>
-
-        {/* ===== STATISTICS ===== */}
+        {/* STATISTICS */}
         <div className="grid grid-cols-3 gap-6 mt-8">
           <StatCard title="Participanți" value={total} />
           <StatCard title="Finalizate" value={completed} />
           <StatCard title="Scor mediu" value={avgScore} />
         </div>
 
-        {/* ===== STUDENTS TABLE ===== */}
+        {/* STUDENTS TABLE */}
         <h2 className="text-2xl font-semibold text-gray-800 mt-10">Studenți</h2>
 
         <div className="mt-4 overflow-hidden border rounded-xl">
@@ -166,7 +201,7 @@ export default function SessionResults() {
         </button>
       </div>
 
-      {/* ===== QUESTIONS ANALYTICS ===== */}
+      {/* ANALYTICS */}
       <div className="max-w-5xl mx-auto mt-10 bg-white shadow-xl p-8 rounded-2xl border border-gray-200">
         <h2 className="text-2xl font-bold mb-4">Analytics pe întrebări</h2>
 
