@@ -8,7 +8,7 @@ const QuestionsEditController = require("../controllers/QuestionsEditController"
 
 const questionsRoutes = require("./questionRoutes");
 
-// ==== RUTE PRINCIPALE (trebuie primele) ====
+// ------------------ Main Quiz Operations ------------------
 
 router.post(
   "/create",
@@ -31,7 +31,7 @@ router.delete(
   ProfessorQuizController.deleteQuiz
 );
 
-// ==== VIEW + EDIT ====
+// ------------------ View & Edit Quiz ------------------
 
 router.get(
   "/quiz/:id",
@@ -54,7 +54,19 @@ router.put(
   QuestionsEditController.updateQuestions
 );
 
-// ==== IMPORTANT: TREBUIE SĂ FIE ULTIMUL ====
-router.use("/:quizId", questionsRoutes);
+// ------------------ Bulk Question Add (child router) ------------------
+// FIX: must be prefixed to avoid route conflicts
+
+router.use(
+  "/quiz/:quizId",
+  questionsRoutes
+);
+
+router.post(
+  "/quiz/:id/questions",
+  auth,
+  requireRole("professor"),
+  QuestionsEditController.addFullQuestions
+);
 
 module.exports = router;

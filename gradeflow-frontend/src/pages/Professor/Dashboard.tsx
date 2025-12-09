@@ -13,21 +13,30 @@ interface Quiz {
 
 export default function ProfessorDashboard() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
 
   const loadQuizzes = async () => {
     try {
-      // 🔹 ENDPOINT CORECT
       const res = await api.get("/professor/list");
       setQuizzes(res.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteQuiz = async (id: number) => {
     if (!confirm("Sigur vrei să ștergi acest quiz?")) return;
+
     try {
-      // 🔹 ENDPOINT CORECT
       await api.delete(`/professor/delete/${id}`);
       loadQuizzes();
     } catch (err) {
@@ -39,8 +48,6 @@ export default function ProfessorDashboard() {
   useEffect(() => {
     loadQuizzes();
   }, []);
-
-  const navigate = useNavigate();
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -54,25 +61,20 @@ export default function ProfessorDashboard() {
         <div>
           <h1 className="text-4xl font-bold text-gray-900">Professor Dashboard</h1>
           <p className="text-gray-600 mt-1">
-            Vizualizează quiz-urile tale, gestionează studenții și creează noi evaluări.
+            Vizualizează și gestionează quiz-urile tale.
           </p>
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Creează Quiz */}
-          <a
-            href="/professor/create-quiz"
+          <button
+            onClick={() => navigate("/professor/create-quiz")}
             className="px-6 py-3 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition"
           >
             + Creează un Quiz
-          </a>
+          </button>
 
-          {/* Logout */}
           <button
-            onClick={() => {
-              localStorage.removeItem("token");
-              window.location.href = "/";
-            }}
+            onClick={logout}
             className="px-6 py-3 bg-red-600 text-white rounded-xl shadow hover:bg-red-700 transition"
           >
             Logout
@@ -84,14 +86,16 @@ export default function ProfessorDashboard() {
       <div className="grid md:grid-cols-3 gap-6 mb-10">
         <StatCard title="Quiz-uri create" value={quizzes.length} />
         <StatCard title="Studenți evaluați" value="—" />
-        <StatCard title="Întrebări totale" value={calculateTotalQuestions(quizzes)} />
+        <StatCard title="Întrebări totale" value="—" />
       </div>
 
-      {/* Quiz List */}
+      {/* QUIZ LIST */}
       <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
         <h2 className="text-2xl font-semibold mb-4 text-gray-900">Quiz-urile tale</h2>
 
-        {quizzes.length === 0 ? (
+        {loading ? (
+          <p className="text-gray-600">Se încarcă...</p>
+        ) : quizzes.length === 0 ? (
           <p className="text-gray-600">Nu ai creat încă niciun quiz.</p>
         ) : (
           <table className="w-full text-left border-collapse mt-4">
@@ -111,22 +115,20 @@ export default function ProfessorDashboard() {
                   <td className="p-3">{q.title}</td>
                   <td className="p-3 font-mono">{q.join_code}</td>
                   <td className="p-3">{q.time_limit} min</td>
-                  <td className="p-3">{new Date(q.created_at).toLocaleString()}</td>
+                  <td className="p-3">
+                    {new Date(q.created_at).toLocaleString()}
+                  </td>
 
                   <td className="p-3 flex gap-3 justify-end">
                     <button
-                      onClick={() =>
-                        (window.location.href = `/professor/quiz/${q.id}`)
-                      }
+                      onClick={() => navigate(`/professor/quiz/${q.id}`)}
                       className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
                     >
                       Vezi
                     </button>
 
                     <button
-                      onClick={() =>
-                        (window.location.href = `/professor/edit-quiz/${q.id}`)
-                      }
+                      onClick={() => navigate(`/professor/edit-quiz/${q.id}`)}
                       className="px-4 py-2 bg-yellow-400 text-white rounded-lg hover:bg-yellow-500 transition"
                     >
                       Editează
@@ -145,12 +147,13 @@ export default function ProfessorDashboard() {
           </table>
         )}
       </div>
-      <a
-        href="/professor/sessions"
+
+      <button
+        onClick={() => navigate("/professor/sessions")}
         className="block mt-6 px-5 py-3 bg-purple-600 text-white rounded-xl text-center hover:bg-purple-700"
       >
         📊 Vezi sesiuni susținute
-      </a>
+      </button>
     </div>
   );
 }
@@ -162,9 +165,4 @@ function StatCard({ title, value }: { title: string; value: any }) {
       <p className="text-3xl font-bold text-blue-600 mt-2">{value}</p>
     </div>
   );
-}
-
-function calculateTotalQuestions(_quizzes: any[]) {
-  // deocamdată placeholder – îl vom lega la un endpoint real mai târziu
-  return "—";
 }

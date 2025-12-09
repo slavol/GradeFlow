@@ -10,7 +10,12 @@ export default function Login() {
     e.preventDefault();
     try {
       const res = await api.post("/auth/login", { email, password });
+
+      // Salvăm token + rol
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("role", res.data.role);
+
+      // Redirectare în funcție de rol
       if (res.data.role === "professor") {
         window.location.href = "/professor/dashboard";
       } else {

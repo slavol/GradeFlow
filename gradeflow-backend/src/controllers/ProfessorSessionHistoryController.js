@@ -5,40 +5,44 @@ module.exports = {
     try {
       const professorId = req.user.id;
 
-      // 1️⃣ Luăm toate sesiunile profesorului, fără join
-      const sessionsResult = await pool.query(
-        "SELECT * FROM quiz_sessions WHERE professor_id = $1 ORDER BY created_at DESC",
+      // 1️⃣ Luăm sesiunile profesorului
+      const sessionsRes = await pool.query(
+        `SELECT id, quiz_id, session_code, status, created_at
+         FROM quiz_sessions
+         WHERE professor_id = $1
+         ORDER BY created_at DESC`,
         [professorId]
       );
 
-      const sessions = sessionsResult.rows;
+      const sessions = sessionsRes.rows;
 
-      // 2️⃣ Pentru fiecare sesiune luăm quiz-ul aferent
+      // 2️⃣ Pentru fiecare sesiune, completăm datele
       for (let s of sessions) {
+
+        // Quiz title
         const quizRes = await pool.query(
-          "SELECT id, title FROM quizzes WHERE id = $1",
+          `SELECT title FROM quizzes WHERE id = $1`,
           [s.quiz_id]
         );
+        s.quiz_title = quizRes.rows[0] ? quizRes.rows[0].title : "Quiz șters";
 
-        s.quiz = quizRes.rows[0] || { id: null, title: "Quiz șters" };
-
-        // 3️⃣ Calcule rapide
-        const studCount = await pool.query(
-          "SELECT COUNT(*) FROM student_sessions WHERE session_id = $1",
+        // Participants + AVG score (UN SINGUR QUERY)
+        const statsRes = await pool.query(
+          `SELECT 
+              COUNT(*) AS participants,
+              AVG(score) AS avg_score
+           FROM student_sessions
+           WHERE session_id = $1`,
           [s.id]
         );
 
-        s.participants = Number(studCount.rows[0].count);
-
-        const avgScore = await pool.query(
-          "SELECT AVG(score) FROM student_sessions WHERE session_id = $1 AND completed = true",
-          [s.id]
-        );
-
-        s.avg_score = avgScore.rows[0].avg ? Math.round(avgScore.rows[0].avg) : 0;
+        s.participants = Number(statsRes.rows[0].participants);
+        s.avg_score = statsRes.rows[0].avg_score
+          ? Math.round(statsRes.rows[0].avg_score)
+          : 0;
       }
 
-      return res.json({ sessions });
+      return res.json(sessions);
 
     } catch (err) {
       console.error("HISTORY ERROR:", err);
@@ -47,28 +51,25 @@ module.exports = {
   },
 
   deleteSession: async (req, res) => {
-  try {
-    const professorId = req.user.id;
-    const sessionId = req.params.id;
+    try {
+      const professorId = req.user.id;
+      const sessionId = req.params.id;
 
-    // Securitate: șterge doar dacă sesiunea aparține profesorului
-    const check = await pool.query(
-      `SELECT id FROM quiz_sessions WHERE id=$1 AND professor_id=$2`,
-      [sessionId, professorId]
-    );
+      const check = await pool.query(
+        `SELECT id FROM quiz_sessions WHERE id=$1 AND professor_id=$2`,
+        [sessionId, professorId]
+      );
 
-    if (check.rows.length === 0) {
-      return res.status(404).json({ message: "Sesiunea nu a fost găsită." });
+      if (check.rows.length === 0) {
+        return res.status(404).json({ message: "Sesiunea nu a fost găsită." });
+      }
+
+      await pool.query(`DELETE FROM quiz_sessions WHERE id=$1`, [sessionId]);
+
+      res.json({ success: true });
+    } catch (err) {
+      console.error("DELETE SESSION ERROR:", err);
+      res.status(500).json({ message: "Server error." });
     }
-
-    // DELETE CASCADE se ocupă de restul în DB
-    await pool.query(`DELETE FROM quiz_sessions WHERE id=$1`, [sessionId]);
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error("DELETE SESSION ERROR:", err);
-    res.status(500).json({ message: "Server error." });
   }
-},
-
 };

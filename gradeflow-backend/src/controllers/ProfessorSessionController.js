@@ -1,105 +1,82 @@
-const pool = require("../db/database");
+const db = require("../db/database");
+const SessionRepository = require("../repositories/SessionRepository");
 
 module.exports = {
+
+  // =====================================================
+  // START SESSION
+  // =====================================================
   startSession: async (req, res) => {
     try {
       const quizId = req.params.id;
       const professorId = req.user.id;
 
-      const sessionCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const session = await SessionRepository.createSession(quizId, professorId);
 
-      const result = await pool.query(
-        `INSERT INTO quiz_sessions (quiz_id, professor_id, session_code)
-         VALUES ($1, $2, $3)
-         RETURNING *`,
-        [quizId, professorId, sessionCode]
-      );
+      return res.json({
+        success: true,
+        message: "Session started",
+        session
+      });
 
-      res.json({ message: "Session started", session: result.rows[0] });
     } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: "Server error" });
+      console.error("START SESSION ERROR:", err);
+      return res.status(500).json({ error: "Server error" });
     }
   },
 
+  // =====================================================
+  // GET LIVE SESSION INFO (for professor panel)
+  // =====================================================
   getSession: async (req, res) => {
     try {
       const sessionId = req.params.id;
 
-      const sessionRes = await pool.query(
-        `SELECT * FROM quiz_sessions WHERE id=$1`,
+      // session + quiz info
+      const session = await SessionRepository.getSessionWithQuiz(sessionId);
+      if (!session) return res.status(404).json({ error: "Session not found" });
+
+      // list all students & their score (live scoreboard)
+      const studentsRes = await db.query(
+        `SELECT 
+            ss.id AS student_session_id,
+            u.id AS student_id,
+            u.email,
+            ss.score,
+            ss.completed
+         FROM student_sessions ss
+         JOIN users u ON u.id = ss.student_id
+         WHERE ss.session_id = $1
+         ORDER BY ss.completed ASC, ss.score DESC`,
         [sessionId]
       );
 
-      if (!sessionRes.rows.length)
-        return res.status(404).json({ message: "Session not found" });
-
-      const studentsRes = await pool.query(
-        `SELECT u.id, u.email
-         FROM session_participants sp
-         JOIN users u ON sp.student_id = u.id
-         WHERE sp.session_id=$1`,
-        [sessionId]
-      );
-
-      res.json({
-        session: sessionRes.rows[0],
+      return res.json({
+        session,
         students: studentsRes.rows,
       });
 
     } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: "Server error" });
+      console.error("GET SESSION ERROR:", err);
+      return res.status(500).json({ error: "Server error" });
     }
   },
 
-
+  // =====================================================
+  // CLOSE SESSION
+  // =====================================================
   closeSession: async (req, res) => {
     try {
       const sessionId = req.params.id;
-
-      await pool.query(
-        `UPDATE quiz_sessions SET status='closed' WHERE id=$1`,
-        [sessionId]
-      );
-
-      res.json({ message: "Session closed" });
-
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: "Server error" });
-    }
-  },
-
-  getHistory: async (req, res) => {
-    try {
       const professorId = req.user.id;
 
-      // 1. luăm toate sesiunile pentru profesor
-      const sessionsRes = await pool.query(
-        `SELECT id, quiz_id, session_code, status, created_at
-         FROM quiz_sessions
-         WHERE professor_id = $1
-         ORDER BY created_at DESC`,
-        [professorId]
-      );
+      await SessionRepository.closeSession(sessionId, professorId);
 
-      const sessions = sessionsRes.rows;
+      return res.json({ success: true, message: "Session closed" });
 
-      // 2. pentru fiecare sesiune, luăm titlul quiz-ului (fără JOIN)
-      for (const s of sessions) {
-        const quizRes = await pool.query(
-          `SELECT title FROM quizzes WHERE id = $1`,
-          [s.quiz_id]
-        );
-        s.quiz_title = quizRes.rows[0] ? quizRes.rows[0].title : null;
-      }
-
-      // trimitem direct array (frontend-ul e pregătit și pt { sessions: [...] })
-      res.json(sessions);
     } catch (err) {
-      console.error("HISTORY ERROR:", err);
-      res.status(500).json({ message: "Server error" });
+      console.error("CLOSE SESSION ERROR:", err);
+      return res.status(500).json({ error: "Server error" });
     }
-  }
+  },
 };

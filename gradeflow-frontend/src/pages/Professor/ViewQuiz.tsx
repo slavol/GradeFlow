@@ -11,17 +11,28 @@ interface Option {
 interface Question {
   id: number;
   title: string;
-  question_type: string;
+  question_type: "single" | "multiple";
   options: Option[];
+  position?: number;
+}
+
+interface Quiz {
+  id: number;
+  title: string;
+  description: string;
+  join_code: string;
+  time_limit: number;
+  creation_type: string;
+  questions: Question[];
 }
 
 export default function ViewQuiz() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [quiz, setQuiz] = useState<any>(null);
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<number | null>(null);
 
   const loadQuiz = async () => {
     try {
@@ -29,7 +40,6 @@ export default function ViewQuiz() {
       console.log("QUIZ RESPONSE:", res.data);
 
       setQuiz(res.data);
-      setQuestions(res.data.questions);
     } catch (err) {
       console.error(err);
       alert("Eroare la încărcarea quiz-ului");
@@ -42,24 +52,20 @@ export default function ViewQuiz() {
     loadQuiz();
   }, []);
 
+  const toggleExpand = (index: number) =>
+    setExpanded(expanded === index ? null : index);
+
   const copyJoinCode = () => {
+    if (!quiz) return;
     navigator.clipboard.writeText(quiz.join_code);
     alert("Cod copiat în clipboard!");
   };
-
-  const [expanded, setExpanded] = useState<number | null>(null);
-
-  const toggleExpand = (index: number) => {
-    setExpanded(expanded === index ? null : index);
-  };
-
-  if (loading) return <div className="p-10 text-center">Se încarcă...</div>;
-  if (!quiz) return <div className="p-10 text-center">Quiz inexistent.</div>;
 
   const startSession = async () => {
     try {
       const res = await api.post(`/professor/quiz/${id}/start`);
       const session = res.data.session;
+
       navigate(`/professor/session/${session.id}`);
     } catch (err) {
       console.error(err);
@@ -67,9 +73,16 @@ export default function ViewQuiz() {
     }
   };
 
+  // ---------------------------------------------------------
+  // UI
+  // ---------------------------------------------------------
+
+  if (loading) return <div className="p-10 text-center">Se încarcă...</div>;
+  if (!quiz) return <div className="p-10 text-center">Quiz inexistent.</div>;
+
   return (
     <div className="min-h-screen bg-[#f4f6fc] p-8">
-      <div className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
+      <div className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-lg border">
 
         {/* HEADER */}
         <div className="flex justify-between mb-8">
@@ -82,8 +95,11 @@ export default function ViewQuiz() {
 
           <div className="text-right">
             <p className="text-gray-500">Cod de alăturare:</p>
+
             <div className="flex items-center gap-2 justify-end">
-              <p className="font-mono text-xl font-semibold">{quiz.join_code}</p>
+              <p className="font-mono text-xl font-semibold">
+                {quiz.join_code}
+              </p>
 
               <button
                 onClick={copyJoinCode}
@@ -102,7 +118,7 @@ export default function ViewQuiz() {
           </div>
 
           <div className="p-3 bg-gray-100 rounded-xl">
-            ❓ Întrebări: <strong>{questions.length}</strong>
+            ❓ Întrebări: <strong>{quiz.questions.length}</strong>
           </div>
 
           <div className="p-3 bg-gray-100 rounded-xl">
@@ -113,10 +129,12 @@ export default function ViewQuiz() {
         <hr className="my-6" />
 
         {/* LISTA ÎNTREBĂRI */}
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Întrebări</h2>
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+          Întrebări
+        </h2>
 
         <div className="space-y-6">
-          {questions.map((q, index) => {
+          {quiz.questions.map((q, index) => {
             const isOpen = expanded === index;
 
             return (
@@ -146,16 +164,17 @@ export default function ViewQuiz() {
                   </strong>
                 </p>
 
-                {/* OPTIONS */}
+                {/* OPTIONS LIST */}
                 {isOpen && (
                   <div className="mt-4 space-y-2">
                     {q.options.map((opt) => (
                       <div
                         key={opt.id}
-                        className={`p-3 rounded-lg border ${opt.is_correct
-                          ? "bg-green-100 border-green-300"
-                          : "bg-white"
-                          }`}
+                        className={`p-3 rounded-lg border ${
+                          opt.is_correct
+                            ? "bg-green-100 border-green-300"
+                            : "bg-white"
+                        }`}
                       >
                         {opt.text}
                       </div>
@@ -169,10 +188,9 @@ export default function ViewQuiz() {
 
         {/* BUTTONS */}
         <div className="mt-8 flex justify-end gap-4">
+
           <button
-            onClick={() =>
-              navigate(`/professor/edit-quiz/${quiz.id}`)
-            }
+            onClick={() => navigate(`/professor/edit-quiz/${quiz.id}`)}
             className="px-5 py-3 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600"
           >
             ✏️ Editează Quiz

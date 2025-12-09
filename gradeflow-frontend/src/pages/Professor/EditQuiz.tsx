@@ -26,12 +26,41 @@ export default function EditQuiz() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // pentru drag and drop
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
-  /** -----------------------------------------------------
-   * 1️⃣ Încarcă QUIZ + întrebări
-   * ----------------------------------------------------- */
+  // -------------------------------------------------------
+  //  VALIDARE COMPLETĂ – identică cu CreateQuiz
+  // -------------------------------------------------------
+  const validateQuiz = () => {
+    if (!title.trim()) return "Titlul quiz-ului este obligatoriu";
+    if (questions.length === 0) return "Quiz-ul trebuie să aibă minim o întrebare";
+
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+
+      if (!q.title.trim()) return `Întrebarea #${i + 1} nu are titlu`;
+
+      if (q.options.length < 2)
+        return `Întrebarea #${i + 1} are mai puțin de 2 opțiuni`;
+
+      if (q.options.some(o => !o.text.trim()))
+        return `Întrebarea #${i + 1} conține opțiuni goale`;
+
+      const correctCount = q.options.filter(o => o.is_correct).length;
+
+      if (correctCount === 0)
+        return `Întrebarea #${i + 1} trebuie să aibă cel puțin o opțiune corectă`;
+
+      if (q.question_type === "single" && correctCount > 1)
+        return `Întrebarea #${i + 1} permite un singur răspuns corect`;
+    }
+
+    return null;
+  };
+
+  // -------------------------------------------------------
+  // 1️⃣ Load Quiz
+  // -------------------------------------------------------
   const loadQuiz = async () => {
     try {
       const res = await api.get(`/professor/quiz/${id}`);
@@ -40,7 +69,6 @@ export default function EditQuiz() {
       setDescription(res.data.description);
       setTimeLimit(res.data.time_limit);
 
-      // setăm poziția (fallback dacă nu există)
       const ordered = res.data.questions.map((q: Question, index: number) => ({
         ...q,
         position: q.position ?? index
@@ -48,6 +76,7 @@ export default function EditQuiz() {
 
       setQuestions(ordered);
       setLoading(false);
+
     } catch (err) {
       console.error(err);
       alert("Eroare la încărcarea quiz-ului");
@@ -58,16 +87,12 @@ export default function EditQuiz() {
     loadQuiz();
   }, []);
 
-  /** -----------------------------------------------------
-   * 2️⃣ Drag & Drop reorder întrebări
-   * ----------------------------------------------------- */
-  const handleDragStart = (index: number) => {
-    setDragIndex(index);
-  };
+  // -------------------------------------------------------
+  // Drag & Drop
+  // -------------------------------------------------------
+  const handleDragStart = (index: number) => setDragIndex(index);
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-  };
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
 
   const handleDrop = (index: number) => {
     if (dragIndex === null) return;
@@ -76,16 +101,14 @@ export default function EditQuiz() {
     const moved = updated.splice(dragIndex, 1)[0];
     updated.splice(index, 0, moved);
 
-    // actualizăm pozițiile
     updated.forEach((q, i) => (q.position = i));
-
     setQuestions(updated);
     setDragIndex(null);
   };
 
-  /** -----------------------------------------------------
-   * 3️⃣ Adăugare / Ștergere întrebare și opțiuni
-   * ----------------------------------------------------- */
+  // -------------------------------------------------------
+  // Add / Delete Question / Options
+  // -------------------------------------------------------
   const addQuestion = () => {
     setQuestions([
       ...questions,
@@ -104,7 +127,6 @@ export default function EditQuiz() {
   const deleteQuestion = (index: number) => {
     const updated = [...questions];
     updated.splice(index, 1);
-
     updated.forEach((q, i) => (q.position = i));
     setQuestions(updated);
   };
@@ -121,10 +143,13 @@ export default function EditQuiz() {
     setQuestions(updated);
   };
 
-  /** -----------------------------------------------------
-   * 4️⃣ Salvare în backend
-   * ----------------------------------------------------- */
+  // -------------------------------------------------------
+  //  SAVE
+  // -------------------------------------------------------
   const saveQuiz = async () => {
+    const validationError = validateQuiz();
+    if (validationError) return alert(validationError);
+
     try {
       await api.put(`/professor/quiz/${id}`, {
         title,
@@ -138,15 +163,16 @@ export default function EditQuiz() {
 
       alert("Quiz actualizat cu succes!");
       navigate(`/professor/quiz/${id}`);
+
     } catch (err) {
       console.error(err);
       alert("Eroare la salvare");
     }
   };
 
-  /** -----------------------------------------------------
-   * 5️⃣ UI
-   * ----------------------------------------------------- */
+  // -------------------------------------------------------
+  // UI
+  // -------------------------------------------------------
   if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-700">
@@ -156,35 +182,34 @@ export default function EditQuiz() {
 
   return (
     <div className="min-h-screen bg-gray-100 px-6 py-10">
-      <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-2xl p-8 border border-gray-200">
+      <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-2xl p-8 border">
 
         <h1 className="text-3xl font-bold text-gray-800">Editează Quiz</h1>
 
-        {/* ---------------- QUIZ META ---------------- */}
         <div className="mt-8 space-y-6">
 
+          {/* Meta */}
           <div>
-            <label className="block text-gray-700 font-medium">Titlu quiz</label>
+            <label className="font-medium">Titlu quiz</label>
             <input
               className="w-full mt-1 p-3 border rounded-lg bg-gray-50"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={e => setTitle(e.target.value)}
             />
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium">Descriere</label>
+            <label className="font-medium">Descriere</label>
             <textarea
               className="w-full mt-1 p-3 border rounded-lg bg-gray-50"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={e => setDescription(e.target.value)}
             />
           </div>
 
+          {/* Time limit */}
           <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Limită de timp (minute)
-            </label>
+            <label className="font-medium">Limită de timp</label>
 
             <div className="flex items-center gap-5">
               <input
@@ -192,7 +217,7 @@ export default function EditQuiz() {
                 min={1}
                 max={60}
                 value={timeLimit}
-                onChange={(e) => setTimeLimit(Number(e.target.value))}
+                onChange={e => setTimeLimit(Number(e.target.value))}
                 className="w-full"
               />
 
@@ -202,16 +227,17 @@ export default function EditQuiz() {
                 value={timeLimit}
                 min={1}
                 max={60}
-                onChange={(e) => setTimeLimit(Number(e.target.value))}
+                onChange={e => setTimeLimit(Number(e.target.value))}
               />
             </div>
           </div>
 
           <hr className="my-6" />
 
-          {/* ---------------- ÎNTREBĂRI ---------------- */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-gray-800">Întrebări</h2>
+          {/* Questions */}
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Întrebări</h2>
+
             <button
               onClick={addQuestion}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -230,15 +256,11 @@ export default function EditQuiz() {
                 onDragOver={handleDragOver}
                 onDrop={() => handleDrop(index)}
               >
-                {/* Handle reorder */}
-                <div className="absolute left-3 top-3 text-gray-400 cursor-grab">
-                  ☰
-                </div>
+                <div className="absolute left-3 top-3 text-gray-400 cursor-grab">☰</div>
 
-                {/* Delete question */}
                 <button
                   onClick={() => deleteQuestion(index)}
-                  className="absolute top-0.5 right-2 text-red-500 hover:text-red-700"
+                  className="absolute right-3 top-3 text-red-500"
                 >
                   ✕
                 </button>
@@ -270,10 +292,10 @@ export default function EditQuiz() {
                   </select>
                 </div>
 
-                {/* Options */}
                 <div className="mt-4 ml-2 space-y-3">
                   {q.options.map((opt, oIndex) => (
-                    <div key={oIndex} className="flex items-center gap-3 relative">
+                    <div key={oIndex} className="flex items-center gap-3">
+
                       <input
                         type={q.question_type === "single" ? "radio" : "checkbox"}
                         name={`q-${index}`}
@@ -282,10 +304,12 @@ export default function EditQuiz() {
                           const updated = [...questions];
 
                           if (q.question_type === "single") {
-                            updated[index].options.forEach((o) => (o.is_correct = false));
+                            updated[index].options.forEach(o => (o.is_correct = false));
                           }
 
-                          updated[index].options[oIndex].is_correct = e.target.checked;
+                          updated[index].options[oIndex].is_correct =
+                            e.target.checked;
+
                           setQuestions(updated);
                         }}
                       />
@@ -303,7 +327,7 @@ export default function EditQuiz() {
 
                       <button
                         onClick={() => deleteOption(index, oIndex)}
-                        className="text-red-500 hover:text-red-700"
+                        className="text-red-500"
                       >
                         🗑
                       </button>
@@ -312,7 +336,7 @@ export default function EditQuiz() {
 
                   <button
                     onClick={() => addOption(index)}
-                    className="mt-3 px-3 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg"
+                    className="mt-3 px-3 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg"
                   >
                     + Adaugă opțiune
                   </button>
@@ -327,6 +351,7 @@ export default function EditQuiz() {
           >
             Salvează modificările
           </button>
+
         </div>
       </div>
     </div>

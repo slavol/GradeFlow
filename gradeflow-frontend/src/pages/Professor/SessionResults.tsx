@@ -1,48 +1,56 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api/api";
 
-// === TYPES ===
-type StudentResult = {
-  id: number;
+// ===== TYPES =====
+type StudentRow = {
+  student_session_id: number;
   email: string;
-  completed: boolean;
   score: number;
+  completed: boolean;
 };
 
 type QuestionAnalytics = {
   question_id: number;
   title: string;
-  correct_answers: number;
+  position: number;
   total_answers: number;
-};
-
-type SessionInfo = {
-  id: number;
-  session_code: string;
-  quiz_title: string;
+  correct_answers: number;
 };
 
 type SessionData = {
-  session: SessionInfo;
-  students: StudentResult[];
+  session: {
+    id: number;
+    session_code: string;
+    quiz_id: number;
+    status: string;
+    created_at: string;
+  };
+  students: StudentRow[];
   analytics: QuestionAnalytics[];
 };
 
-// === COMPONENT ===
+// ===== COMPONENT =====
 export default function SessionResults() {
   const { id } = useParams();
-  const [sessionData, setSessionData] = useState<SessionData | null>(null);
+  const navigate = useNavigate();
+
+  const [data, setData] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadResults = async () => {
     try {
       const res = await api.get(`/professor/session/${id}/results`);
       console.log("RESULTS:", res.data);
-      setSessionData(res.data);
+
+      setData({
+        session: res.data.session,
+        students: res.data.students,
+        analytics: res.data.analytics,
+      });
     } catch (err) {
       console.error(err);
-      alert("Eroare la încărcarea rezultatelor");
+      alert("Eroare la încărcarea rezultatelor.");
     } finally {
       setLoading(false);
     }
@@ -55,31 +63,28 @@ export default function SessionResults() {
   if (loading)
     return <div className="p-10 text-center">Se încarcă rezultatele...</div>;
 
-  if (!sessionData)
-    return <div className="p-10 text-center">Nu există date pentru această sesiune.</div>;
+  if (!data)
+    return <div className="p-10 text-center">Nu există rezultate pentru această sesiune.</div>;
 
-  const { session, students, analytics } = sessionData;
+  const { session, students, analytics } = data;
 
-  // === CALCULATE SUMMARY ===
   const total = students.length;
-  const completed = students.filter((s: StudentResult) => s.completed).length;
-
+  const completed = students.filter((s) => s.completed).length;
   const avgScore =
     completed > 0
       ? Math.round(
-          students
-            .filter((s: StudentResult) => s.completed)
-            .reduce((acc: number, cur: StudentResult) => acc + cur.score, 0) /
+          students.reduce((acc, cur) => acc + (cur.completed ? cur.score : 0), 0) /
             completed
         )
       : 0;
 
   return (
     <div className="min-h-screen bg-[#f4f6fc] p-8">
+
+      {/* ===== HEADER ===== */}
       <div className="max-w-5xl mx-auto bg-white shadow-xl rounded-2xl p-8 border border-gray-200">
 
-        {/* HEADER */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between">
           <h1 className="text-3xl font-bold text-gray-900">Rezultate sesiune</h1>
 
           <div className="text-right">
@@ -89,17 +94,17 @@ export default function SessionResults() {
         </div>
 
         <p className="text-gray-500 mt-1">
-          {session.quiz_title} — {total} participanți
+          Quiz #{session.quiz_id} • {total} participanți
         </p>
 
-        {/* STATISTICS */}
+        {/* ===== STATISTICS ===== */}
         <div className="grid grid-cols-3 gap-6 mt-8">
           <StatCard title="Participanți" value={total} />
           <StatCard title="Finalizate" value={completed} />
           <StatCard title="Scor mediu" value={avgScore} />
         </div>
 
-        {/* STUDENT LIST */}
+        {/* ===== STUDENTS TABLE ===== */}
         <h2 className="text-2xl font-semibold text-gray-800 mt-10">Studenți</h2>
 
         <div className="mt-4 overflow-hidden border rounded-xl">
@@ -114,30 +119,36 @@ export default function SessionResults() {
             </thead>
 
             <tbody>
-              {students.map((s: StudentResult) => (
-                <tr key={s.id} className="border-b hover:bg-gray-50 transition">
+              {students.map((s) => (
+                <tr key={s.student_session_id} className="border-b hover:bg-gray-50 transition">
                   <td className="p-3">{s.email}</td>
 
                   <td className="p-3">
                     {s.completed ? (
                       <span className="text-green-600 font-semibold">Finalizat</span>
                     ) : (
-                      <span className="text-orange-500 font-semibold">În progres</span>
+                      <span className="text-orange-600 font-semibold">În progres</span>
                     )}
                   </td>
 
-                  <td className="p-3 font-semibold">
-                    {s.completed ? `${s.score} pct` : "—"}
+                  <td className="p-3">
+                    {s.completed ? (
+                      <span className="font-semibold">{s.score} pct</span>
+                    ) : (
+                      "—"
+                    )}
                   </td>
 
                   <td className="p-3 text-right">
                     {s.completed && (
-                      <a
-                        href={`/professor/session/${id}/student/${s.id}`}
+                      <button
+                        onClick={() =>
+                          navigate(`/professor/session/${id}/student/${s.student_session_id}`)
+                        }
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                       >
                         Vezi detalii
-                      </a>
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -147,38 +158,40 @@ export default function SessionResults() {
         </div>
 
         {/* BACK BUTTON */}
-        <a
-          href="/professor/dashboard"
+        <button
+          onClick={() => navigate("/professor/sessions")}
           className="mt-10 inline-block px-5 py-3 bg-gray-300 rounded-xl hover:bg-gray-400"
         >
-          ⬅ Înapoi la Dashboard
-        </a>
+          ⬅ Înapoi la Istoric
+        </button>
       </div>
 
-      {/* QUESTION ANALYTICS */}
+      {/* ===== QUESTIONS ANALYTICS ===== */}
       <div className="max-w-5xl mx-auto mt-10 bg-white shadow-xl p-8 rounded-2xl border border-gray-200">
         <h2 className="text-2xl font-bold mb-4">Analytics pe întrebări</h2>
 
         <div className="space-y-4">
-          {analytics.map((a: QuestionAnalytics) => {
+          {analytics.map((q) => {
             const rate =
-              a.total_answers > 0
-                ? Math.round((a.correct_answers / a.total_answers) * 100)
+              q.total_answers > 0
+                ? Math.round((q.correct_answers / q.total_answers) * 100)
                 : 0;
 
             return (
-              <div key={a.question_id} className="p-4 bg-gray-50 rounded-lg border">
-                <p className="font-medium text-gray-800">{a.title}</p>
-
-                <p className="text-gray-600 mt-1">
-                  Răspunsuri corecte: {a.correct_answers}/{a.total_answers} ({rate}%)
+              <div key={q.question_id} className="p-4 bg-gray-50 rounded-xl border">
+                <p className="font-medium text-gray-800">
+                  {q.position + 1}. {q.title}
                 </p>
 
-                <div className="w-full bg-gray-200 rounded-full h-3 mt-2">
+                <p className="text-gray-600 mt-1">
+                  Corecte: {q.correct_answers}/{q.total_answers} ({rate}%)
+                </p>
+
+                <div className="w-full bg-gray-300 h-3 rounded-full mt-2 overflow-hidden">
                   <div
                     className="bg-green-500 h-3 rounded-full"
                     style={{ width: `${rate}%` }}
-                  ></div>
+                  />
                 </div>
               </div>
             );
@@ -189,7 +202,7 @@ export default function SessionResults() {
   );
 }
 
-// === SMALL COMPONENT ===
+// SMALL COMPONENT
 function StatCard({ title, value }: { title: string; value: number }) {
   return (
     <div className="bg-white border rounded-xl p-6 text-center shadow">

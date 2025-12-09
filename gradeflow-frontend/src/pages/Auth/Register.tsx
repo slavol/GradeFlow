@@ -7,23 +7,31 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("student");
   const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const register = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    setError("");
+
     try {
       await api.post("/auth/register", { email, password, role });
       setDone(true);
 
-      // 🔥 Redirect după 1 secundă
+      // Redirect după 1 sec
       setTimeout(() => {
         navigate("/login");
       }, 1000);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Eroare la crearea contului");
+
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("A apărut o eroare. Încearcă din nou.");
+      }
     }
   };
 
@@ -48,12 +56,17 @@ export default function Register() {
           </p>
         )}
 
+        {error && (
+          <p className="text-red-400 text-center mt-3">{error}</p>
+        )}
+
         <input
           type="email"
           placeholder="Email"
           className="w-full mt-6 p-3 bg-white/10 border border-white/20 rounded-xl text-white outline-none"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
         />
 
         <input
@@ -62,6 +75,7 @@ export default function Register() {
           className="w-full mt-4 p-3 bg-white/10 border border-white/20 rounded-xl text-white outline-none"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          required
         />
 
         <select
@@ -74,7 +88,9 @@ export default function Register() {
         </select>
 
         <button
-          className="w-full mt-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl transition font-medium"
+          disabled={done}
+          className={`w-full mt-6 py-3 rounded-xl font-medium transition 
+            ${done ? "bg-gray-600" : "bg-blue-600 hover:bg-blue-700"}`}
         >
           Creează cont
         </button>

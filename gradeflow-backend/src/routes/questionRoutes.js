@@ -6,7 +6,7 @@ const requireRole = require("../middleware/requireRole");
 const QuestionsController = require("../controllers/QuestionsController");
 
 router.post(
-  "/questions",
+  "/questions/bulk",
   auth,
   requireRole("professor"),
   QuestionsController.addMultipleQuestions

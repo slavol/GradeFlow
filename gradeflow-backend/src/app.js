@@ -2,9 +2,12 @@ const express = require("express");
 const cors = require("cors");
 
 const authRoutes = require("./routes/authRoutes");
+
 const professorQuizRoutes = require("./routes/professorQuizRoutes");
 const professorQuestionsRoutes = require("./routes/professorQuestionsRoutes");
 const professorSessionRoutes = require("./routes/professorSessionRoutes");
+
+const studentSessionRoutes = require("./routes/studentSessionRoutes");
 
 const app = express();
 
@@ -21,15 +24,25 @@ app.use(express.json());
 // 🔐 AUTH
 app.use("/auth", authRoutes);
 
-// 🧑‍🏫 QUIZ MANAGEMENT (CRUD + VIEW + EDIT)
+// ======================================================
+// 🧑‍🏫 PROFESSOR ROUTES — ORDER MATTERS!
+// ======================================================
+
+// AUTH
+app.use("/auth", authRoutes);
+
+// PROFESSOR QUIZ CRUD + QUESTIONS (include /:quizId/questions)
 app.use("/professor", professorQuizRoutes);
 
-// 🧑‍🏫 QUESTIONS & OPTIONS MANAGEMENT
-app.use("/professor", professorQuestionsRoutes);
-
-// 🧑‍🏫 LIVE SESSION (start / status / close)
+// PROFESSOR LIVE SESSION
 app.use("/professor", professorSessionRoutes);
 
+// IMPORTANT: OPTIONS & OLD QUESTIONS ROUTES LAST
+app.use("/professor", professorQuestionsRoutes);
 
+// ======================================================
+// 🎓 STUDENT LIVE SESSION
+// ======================================================
+app.use("/student/session", studentSessionRoutes);
 
 module.exports = app;

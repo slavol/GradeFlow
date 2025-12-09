@@ -29,10 +29,37 @@ export default function CreateQuiz() {
   const [creationType, setCreationType] = useState("manual");
 
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
 
-  // ➕ întrebare
+  const validateQuiz = () => {
+    if (!title.trim()) return "Titlul quiz-ului este obligatoriu";
+    if (questions.length === 0)
+      return "Trebuie să adaugi cel puțin o întrebare";
+
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+
+      if (!q.title.trim()) return `Întrebarea #${i + 1} nu are titlu`;
+
+      if (q.options.length < 2)
+        return `Întrebarea #${i + 1} trebuie să aibă minim 2 opțiuni`;
+
+      if (q.options.some((o) => !o.text.trim()))
+        return `Întrebarea #${i + 1} are opțiuni goale`;
+
+      const correctCount = q.options.filter((o) => o.is_correct).length;
+
+      if (correctCount === 0)
+        return `Întrebarea #${i + 1} trebuie să aibă cel puțin un răspuns corect`;
+
+      if (q.question_type === "single" && correctCount > 1)
+        return `Întrebarea #${i + 1} permite un singur răspuns corect`;
+    }
+
+    return null;
+  };
+
+  // ➕ Add Question
   const addQuestion = () => {
     setQuestions([
       ...questions,
@@ -47,42 +74,43 @@ export default function CreateQuiz() {
     ]);
   };
 
-  // ➕ opțiune
+  // ➕ Add Option
   const addOption = (qIndex: number) => {
     const updated = [...questions];
     updated[qIndex].options.push({ text: "", is_correct: false });
     setQuestions(updated);
   };
 
-  // ❌ șterge opțiune
+  // ❌ Delete Option
   const deleteOption = (qIndex: number, oIndex: number) => {
     const updated = [...questions];
     updated[qIndex].options.splice(oIndex, 1);
     setQuestions(updated);
   };
 
-  // ❌ șterge întrebare
+  // ❌ Delete Question
   const deleteQuestion = (qIndex: number) => {
     const updated = [...questions];
     updated.splice(qIndex, 1);
     setQuestions(updated);
   };
 
-  // Trimite quiz-ul
+  // SUBMIT QUIZ
   const submitQuiz = async () => {
+    const validationError = validateQuiz();
+    if (validationError) return alert(validationError);
+
     try {
       const quizRes = await api.post("/professor/create", {
         title,
         description,
-        timeLimit,
-        creation_type: "manual",
+        time_limit: timeLimit,
+        creation_type: creationType,
       });
 
       const quizId = quizRes.data.quiz.id;
 
-      await api.post(`/professor/${quizId}/questions`, {
-        questions,
-      });
+      await api.post(`/professor/quiz/${quizId}/questions`, { questions });
 
       alert("Quiz creat cu succes!");
       navigate("/professor/dashboard");
@@ -95,25 +123,19 @@ export default function CreateQuiz() {
   return (
     <div className="min-h-screen bg-gray-100 px-6 py-10">
       <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-2xl p-8 border border-gray-200">
+
         <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
           <QuestionMarkCircleIcon className="w-8 h-8 text-blue-600" />
           Creează un Quiz
         </h1>
 
-        <p className="text-gray-500 mt-1">
-          Completează toate setările quiz-ului
-        </p>
-
-        {successMessage && (
-          <div className="mt-4 p-4 bg-green-100 text-green-700 rounded-lg">
-            {successMessage}
-          </div>
-        )}
-
         <div className="mt-8 space-y-6">
-          {/* Titlu */}
+
+          {/* TITLU */}
           <div>
-            <label className="block text-gray-700 font-medium">Titlu quiz</label>
+            <label className="block text-gray-700 font-medium">
+              Titlu Quiz
+            </label>
             <input
               className="w-full mt-1 p-3 border rounded-lg bg-gray-50"
               value={title}
@@ -121,9 +143,11 @@ export default function CreateQuiz() {
             />
           </div>
 
-          {/* Descriere */}
+          {/* DESCRIERE */}
           <div>
-            <label className="block text-gray-700 font-medium">Descriere</label>
+            <label className="block text-gray-700 font-medium">
+              Descriere
+            </label>
             <textarea
               className="w-full mt-1 p-3 border rounded-lg bg-gray-50"
               value={description}
@@ -131,11 +155,11 @@ export default function CreateQuiz() {
             />
           </div>
 
-          {/* Limită timp */}
+          {/* TIME LIMIT */}
           <div>
-            <label className="block text-gray-700 font-medium mb-1 flex items-center gap-1">
-              <ClockIcon className="w-5 h-5 text-gray-600" />
-              Limită de timp (minute)
+            <label className="block text-gray-700 font-medium flex items-center gap-1">
+              <ClockIcon className="w-5 h-5" />
+              Limită de timp
             </label>
 
             <div className="flex items-center gap-5">
@@ -150,37 +174,17 @@ export default function CreateQuiz() {
 
               <input
                 type="number"
-                className="w-20 p-2 border rounded-lg bg-gray-50"
                 value={timeLimit}
                 min={1}
                 max={60}
                 onChange={(e) => setTimeLimit(Number(e.target.value))}
+                className="w-20 p-2 border rounded-lg bg-gray-50"
               />
             </div>
-
-            <p className="text-sm text-gray-500 mt-1">
-              Timp selectat:{" "}
-              <span className="font-medium">{timeLimit} min</span>
-            </p>
           </div>
 
-          {/* Tip creare */}
-          <div>
-            <label className="block font-medium text-gray-700">Tip creare</label>
-            <select
-              className="w-60 mt-1 p-3 border rounded-lg bg-gray-50"
-              value={creationType}
-              onChange={(e) => setCreationType(e.target.value)}
-            >
-              <option value="manual">Manual</option>
-              <option value="ai">Generat de AI</option>
-            </select>
-          </div>
-
-          <hr className="my-6" />
-
-          {/* Lista întrebări */}
-          <div className="flex items-center justify-between">
+          {/* QUESTIONS */}
+          <div className="flex justify-between items-center">
             <h2 className="text-2xl font-semibold text-gray-800">Întrebări</h2>
 
             <button
@@ -192,21 +196,21 @@ export default function CreateQuiz() {
             </button>
           </div>
 
+          {/* QUESTION LIST */}
           <div className="space-y-10 mt-4">
             {questions.map((q, qIndex) => (
               <div
                 key={qIndex}
                 className="p-6 bg-gray-50 rounded-xl border relative"
               >
-                {/* Delete question */}
                 <button
                   onClick={() => deleteQuestion(qIndex)}
-                  className="absolute top-0.5 right-0.5 text-red-500 hover:text-red-700"
+                  className="absolute top-2 right-2 text-red-500 hover:text-red-700"
                 >
                   <TrashIcon className="w-6 h-6" />
                 </button>
 
-                {/* Text Întrebare */}
+                {/* Q Title */}
                 <div className="flex gap-4">
                   <input
                     className="w-full p-3 border rounded-lg"
@@ -234,20 +238,16 @@ export default function CreateQuiz() {
                   </select>
                 </div>
 
-                {/* Opțiuni */}
-                <div className="mt-4 ml-2 space-y-3">
+                {/* OPTIONS */}
+                <div className="mt-4 space-y-3 ml-2">
                   {q.options.map((opt, oIndex) => (
-                    <div
-                      key={oIndex}
-                      className="flex items-center gap-3 relative"
-                    >
+                    <div key={oIndex} className="flex items-center gap-3">
+
                       <input
-                        type={
-                          q.question_type === "single" ? "radio" : "checkbox"
-                        }
+                        type={q.question_type === "single" ? "radio" : "checkbox"}
                         name={`q-${qIndex}`}
                         checked={opt.is_correct}
-                        onChange={(e) => {
+                        onChange={() => {
                           const updated = [...questions];
 
                           if (q.question_type === "single") {
@@ -257,7 +257,8 @@ export default function CreateQuiz() {
                           }
 
                           updated[qIndex].options[oIndex].is_correct =
-                            e.target.checked;
+                            !updated[qIndex].options[oIndex].is_correct;
+
                           setQuestions(updated);
                         }}
                       />
@@ -268,12 +269,12 @@ export default function CreateQuiz() {
                         value={opt.text}
                         onChange={(e) => {
                           const updated = [...questions];
-                          updated[qIndex].options[oIndex].text = e.target.value;
+                          updated[qIndex].options[oIndex].text =
+                            e.target.value;
                           setQuestions(updated);
                         }}
                       />
 
-                      {/* Delete option */}
                       <button
                         onClick={() => deleteOption(qIndex, oIndex)}
                         className="text-red-500 hover:text-red-700"
@@ -295,6 +296,7 @@ export default function CreateQuiz() {
             ))}
           </div>
 
+          {/* SUBMIT */}
           <button
             onClick={submitQuiz}
             className="w-full py-3 mt-6 bg-green-600 text-white text-lg rounded-xl hover:bg-green-700"
