@@ -1,214 +1,133 @@
-🎓 GradeFlow — Smart Quiz Platform with Real-Time Evaluation & Analytics
+# 🎓 GradeFlow — Smart Quiz Platform with Real-Time Evaluation & Analytics
 
-GradeFlow este o aplicație web modernă pentru administrarea, susținerea și evaluarea quiz-urilor educaționale.
-Platforma oferă o experiență completă atât pentru profesori, cât și pentru studenți:
-	•	creare quiz-uri și întrebări
-	•	sesiuni live cu cod de acces
-	•	progres individual cu timp-limită
-	•	evaluare automată a răspunsurilor
-	•	rezultate detaliate
-	•	clasament și analytics
-	•	istoric personal pentru studenți
-	•	export CSV pentru profesori
+**GradeFlow** este o aplicație web modernă, completă și scalabilă, concepută pentru **administrarea, susținerea și evaluarea quiz-urilor educaționale** în timp real. Platforma oferă o experiență profesională de evaluare digitală, fiind ideală pentru instituții educaționale, prezentări universitare și portofolii de programare.
 
-⸻
+## ✨ Funcționalități Cheie
 
-🚀 Tech Stack
+GradeFlow oferă o suită de funcționalități pentru a eficientiza procesul de evaluare, atât pentru **Profesori** (🧑‍🏫), cât și pentru **Studenți** (🎓).
 
-Frontend
-	•	React
-	•	TypeScript
-	•	React Router
-	•	TailwindCSS
-	•	Axios
+### 🧑‍🏫 Profesor (Teacher)
 
-Backend
-	•	Node.js
-	•	Express.js
-	•	PostgreSQL
-	•	JWT Authentication
-	•	json2csv (pentru export CSV)
+* **Creare & Gestionare Quiz-uri:** Adăugare titlu, descriere, timp-limită și generare automată a codului unic pentru sesiune.
+* **Gestionare Întrebări:** Suport pentru întrebări **single-choice** și **multiple-choice**, cu posibilitatea de ordonare a pozițiilor.
+* **Sesiuni LIVE:**
+    * Pornire sesiune cu cod de acces.
+    * **Monitorizare live** a studenților și vizualizare a scorurilor în timp real.
+* **Analytics Detaliat:**
+    * **Clasament** studenți.
+    * Procent de **finalizare**, **scor mediu**.
+    * Analiza performanței pe **fiecare întrebare** (procentaj de răspunsuri corecte).
+* **Export CSV:** Export complet al rezultatelor sesiunii (email, scor, status finalizare, timpul de terminare).
+* **Istoric Sesiuni:** Vizualizarea tuturor sesiunilor precedente.
 
-⸻
+### 🎓 Student (Student)
 
-📁 Structura proiectului
+* **Dashboard Personal:** Istoric complet al tuturor quiz-urilor finalizate.
+* **Join Sesiune:** Acces rapid prin codul unic oferit de profesor.
+* **Workflow Complet:**
+    * Întrebări afișate **una câte una**.
+    * **Timer** pentru quiz-urile cu limită de timp.
+    * Evaluare automată imediat după trimiterea răspunsului.
+    * **Rezultate finale** detaliate și **clasament** la încheierea sesiunii.
 
-Backend: controllers, routes, repositories, middleware, db, app.js
-Frontend: pages (auth, professor, student), components, api, App.tsx
+---
 
-⸻
+## 🚀 Tehnologii Utilizate (Tech Stack)
 
-✨ Funcționalități principale
+| Componentă | Tehnologii | Descriere |
+| :--- | :--- | :--- |
+| **Frontend** | React, TypeScript, React Router, TailwindCSS, Axios | Interfață dinamică, modernă și tipizată, cu stilizare rapidă. |
+| **Backend** | Node.js, Express.js, PostgreSQL | Server API robust, bază de date relațională fiabilă. |
+| **Autentificare** | JWT (JSON Web Tokens) | Protejarea rutelor și verificare roluri (`profesor`/`student`). |
+| **Utilități** | json2csv | Modul pentru exportul rapid al rezultatelor în format CSV. |
 
-🧑‍🏫 Profesor
+---
 
-Creare și gestionare quiz-uri
-	•	adăugare titlu, descriere, timp-limită
-	•	generare automată cod pentru sesiune
+## 🧠 Arhitectura Backend
 
-Gestionare întrebări
-	•	întrebări single-choice
-	•	întrebări multiple-choice
-	•	ordonarea pozițiilor
+Proiectul folosește o structură de fișiere clară, bazată pe separarea responsabilităților (MVC-like pattern), pentru a asigura mentenabilitatea și scalabilitatea.
 
-Sesiuni LIVE
-	•	pornire sesiune cu cod
-	•	monitorizare live a studenților
-	•	vizualizare scoruri în timp real
+* `controllers`: Logica de aplicare (ex: `Session`, `Quiz`, `Student`).
+* `routes`: Definirea endpoint-urilor API.
+* `repositories`: Interogări SQL structurate pentru interacțiunea cu baza de date.
+* `middleware`: Gestionarea autentificării JWT și a verificării rolurilor.
+* `db`: Conexiunea și gestionarea bazei de date PostgreSQL.
+* `app.js`: Fișierul principal de configurare a serverului.
 
-Analytics
-	•	clasament studenți
-	•	procent de finalizare
-	•	scor mediu
-	•	analiza fiecărei întrebări
-	•	procentaj de răspunsuri corecte
+### 🔄 Fluxul unei Sesiuni Live
 
-Export CSV
+1.  **Profesorul** creează un quiz.
+2.  **Profesorul** pornește o sesiune LIVE (se generează un cod de acces).
+3.  **Studentul** introduce codul în aplicație (`Join Session`).
+4.  **Serverul** validează studentul și îl înscrie la sesiune.
+5.  **Studentul** parcurge întrebările și trimite răspunsurile.
+6.  Fiecare răspuns este **evaluat automat** de către backend.
+7.  La final, se generează **scorul final** și **clasamentul**.
+8.  **Profesorul** vizualizează analytics-ul și poate **exporta CSV**.
 
-Export complet al rezultatelor sesiunii:
-email, scor, finalizare, timpul de terminare
+---
 
-Istoric sesiuni
+## 🛠 Instalare și Rulare
 
-Profesorul poate vizualiza toate sesiunile precedente.
+Pentru a rula proiectul local, urmați pașii de mai jos:
 
-⸻
+### ⚙️ 1. Backend
 
-🎓 Student
+1.  Accesați folderul `backend`:
+    ```bash
+    cd backend
+    ```
+2.  Instalați dependențele:
+    ```bash
+    npm install
+    ```
+3.  Porniți serverul (necesită o instanță de PostgreSQL configurată):
+    ```bash
+    npm start
+    ```
+    > Serverul rulează la adresa: **http://localhost:7050**
 
-Dashboard
-	•	istoric complet al tuturor quiz-urilor finalizate
+### 💻 2. Frontend
 
-Join sesiune
-	•	acces prin cod unic oferit de profesor
+1.  Accesați folderul `frontend`:
+    ```bash
+    cd ../frontend
+    ```
+2.  Instalați dependențele:
+    ```bash
+    npm install
+    ```
+3.  Rulați aplicația:
+    ```bash
+    npm run dev
+    ```
+    > Aplicația rulează la adresa: **http://localhost:5173**
 
-Workflow complet
-	•	întrebări afișate una câte una
-	•	timer dacă quiz-ul are limită de timp
-	•	trimitere răspunsuri
-	•	rezultate finale + detalii pentru fiecare întrebare
-	•	clasament studenți
+---
 
-⸻
+## 📌 API Endpoints Principale
 
-🛠 Instalare și Rulare
+Toate rutele sunt protejate prin middleware de autentificare (JWT) și verificare rol (`profesor`/`student`). Token-ul se trimite în header-ul `Authorization: Bearer TOKEN`.
 
-Backend
-	1.	Accesezi folderul backend
-	2.	Instalezi dependențele (npm install)
-	3.	Pornești serverul (npm start)
+| Categorie | Rute Principale (Exemple) |
+| :--- | :--- |
+| **Auth** | `/register`, `/login` |
+| **Profesor** | `/quizzes` (listare, creare), `/quizzes/:id/questions`, `/sessions/start`, `/sessions/:id/results`, `/dashboard/stats` |
+| **Student** | `/sessions/join`, `/sessions/:id/questions`, `/sessions/:id/submit`, `/personal-history` |
 
-Serverul rulează la adresa: http://localhost:7050
+---
 
-⸻
+## 🤖 Modul AI (Versiune Viitoare)
 
-Frontend
-	1.	Accesezi folderul frontend
-	2.	Instalezi dependențele (npm install)
-	3.	Rulezi aplicația (npm run dev)
+Planificat pentru dezvoltare ulterioară, modulul AI va aduce îmbunătățiri semnificative:
 
-Aplicația rulează la: http://localhost:5173
+* Analiză automată a performanței studenților.
+* Recomandări personalizate de învățare.
+* Generare automată de întrebări.
+* Diagrame inteligente și interpretări avansate ale scorurilor.
 
-⸻
+---
 
-🔐 Autentificare (JWT)
-	•	toate rutele sunt protejate prin token
-	•	middleware-ul verifică rolul utilizatorului (profesor/student)
-	•	token-ul se trimite în header: Authorization: Bearer TOKEN
+## ✨ Contributor
 
-⸻
-
-🧠 Arhitectura Backend
-
-controllers – logica de aplicare (Session, Quiz, Student)
-repositories – interogări SQL structurate
-routes – definirea endpoint-urilor API
-middleware – autentificare + verificare roluri
-db – conexiune și gestionare PostgreSQL
-
-⸻
-
-🔥 Fluxul unei sesiuni live
-	1.	Profesorul creează un quiz
-	2.	Profesorul pornește o sesiune (se generează cod)
-	3.	Studentul introduce codul în aplicație
-	4.	Serverul validează studentul și îl înscrie la sesiune
-	5.	Studentul primește întrebările în ordine
-	6.	Fiecare răspuns este evaluat automat
-	7.	La final se generează scorul
-	8.	Studentul vede rezultatele și clasamentul
-	9.	Profesorul vede analytics + poate exporta CSV
-
-⸻
-
-📊 Dashboard Statistics (Profesor)
-
-Backend calculează:
-	•	numărul total de quiz-uri create
-	•	numărul total de întrebări din toate quiz-urile
-	•	numărul total de studenți evaluați
-
-Cardurile din dashboard afișează aceste valori.
-
-⸻
-
-📌 API Endpoints (Principale)
-
-Auth
-	•	register
-	•	login
-
-Profesor
-	•	listare quiz-uri
-	•	creare, editare, ștergere quiz
-	•	gestionare întrebări
-	•	pornire sesiune live
-	•	rezultate sesiune
-	•	analytics întrebări
-	•	export CSV
-	•	statistici dashboard
-
-Student
-	•	join session
-	•	preluare întrebări + timer
-	•	trimitere răspuns
-	•	rezultate finale
-	•	clasament
-	•	istoric personal
-
-⸻
-
-🤖 Modul AI (Versiune viitoare)
-
-Planificat pentru versiunea completă:
-	•	analiză automată a performanței studentului
-	•	recomandări personalizate
-	•	generare automată întrebări
-	•	interpretare scor per întrebare
-	•	diagrame inteligente
-
-⸻
-
-📝 TODO (viitor)
-	•	UI pentru raport PDF
-	•	modul AI complet
-	•	feedback pentru studenți pe întrebări greșite
-	•	mod prezentare live pentru profesori
-	•	sistem badge-uri & gamificare
-
-⸻
-
-✨ Contributors
-
-Proiect realizat de: Preda Slavoliub-Denis
-
-⸻
-
-🏁 Concluzie
-
-GradeFlow este o platformă completă și scalabilă, care oferă o experiență profesională de evaluare digitală.
-Proiectul este ideal pentru:
-	•	instituții educaționale
-	•	prezentări universitare
-	•	portofoliu de programare
-	•	dezvoltare ulterioară cu modul AI
+Proiect realizat de: **Preda Slavoliub-Denis**
