@@ -1,67 +1,73 @@
-const pool = require("../db/database");
+const prisma = require("../../prisma/client");
 
 class QuizRepository {
-
   static async create(professorId, title, description, timeLimit, creationType) {
     const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-    const result = await pool.query(
-      `INSERT INTO quizzes (professor_id, title, description, time_limit, creation_type, join_code)
-       VALUES ($1,$2,$3,$4,$5,$6)
-       RETURNING *`,
-      [professorId, title, description, timeLimit, creationType, joinCode]
-    );
+    console.log("📦 PRISMA CREATE QUIZ:", {
+      professorId,
+      title,
+      description,
+      timeLimit,
+      creationType
+    });
 
-    return result.rows[0];
+    return prisma.quizzes.create({
+      data: {
+        professor_id: Number(professorId),
+        title,
+        description,
+        time_limit: timeLimit, // 👈 FORȚAT NUMBER
+        creation_type: creationType,
+        join_code: joinCode
+      }
+    });
   }
 
   static async getByProfessorId(professorId) {
-    const result = await pool.query(
-      `SELECT * FROM quizzes WHERE professor_id = $1 ORDER BY created_at DESC`,
-      [professorId]
-    );
-    return result.rows;
+    return prisma.quizzes.findMany({
+      where: { professor_id: Number(professorId) },
+      orderBy: { created_at: "desc" }
+    });
   }
 
   static async delete(id, professorId) {
-    await pool.query(
-      `DELETE FROM quizzes WHERE id = $1 AND professor_id = $2`,
-      [id, professorId]
-    );
+    return prisma.quizzes.deleteMany({
+      where: {
+        id: Number(id),
+        professor_id: Number(professorId)
+      }
+    });
   }
 
   static async findById(id, professorId) {
-    console.log("🔎 QuizRepository.findById", { id, professorId });
-
-    const result = await pool.query(
-      `SELECT * FROM quizzes WHERE id = $1 AND professor_id = $2`,
-      [id, professorId]
-    );
-
-    console.log("📌 Query result:", result.rows);
-
-    return result.rows[0];
+    return prisma.quizzes.findFirst({
+      where: {
+        id: Number(id),
+        professor_id: Number(professorId)
+      }
+    });
   }
 
   static async updateQuizMeta(id, professorId, title, description, time_limit) {
-    const result = await pool.query(
-      `UPDATE quizzes 
-       SET title=$1, description=$2, time_limit=$3
-       WHERE id=$4 AND professor_id=$5
-       RETURNING *`,
-      [title, description, time_limit, id, professorId]
-    );
-    return result.rows[0];
+    return prisma.quizzes.updateMany({
+      where: {
+        id: Number(id),
+        professor_id: Number(professorId)
+      },
+      data: {
+        title,
+        description,
+        time_limit: time_limit
+      }
+    });
   }
 
   static async findSessionById(sessionId) {
-  const res = await pool.query(
-    `SELECT * FROM quiz_sessions WHERE id = $1`,
-    [sessionId]
-  );
-
-  return res.rows[0] || null;
-}
+    return prisma.quiz_sessions.findUnique({
+      where: { id: Number(sessionId) }
+    });
+  }
 }
 
 module.exports = QuizRepository;

@@ -17,6 +17,7 @@ import ProfessorLiveSession from "./pages/Professor/ProfessorLiveSession";
 import SessionResults from "./pages/Professor/SessionResults";
 import ProfessorSessionsHistory from "./pages/Professor/ProfessorSessionsHistory";
 import ProfessorStudentDetails from "./pages/Professor/ProfessorStudentDetails";
+import ProfessorLiveSessionsList from "./pages/Professor/ProfessorSessions"
 
 // Student
 import StudentDashboard from "./pages/Student/StudentDashboard";
@@ -41,6 +42,10 @@ export default function App() {
         {/* 🧑‍🏫 PROFESSOR ROUTES                   */}
         {/* ─────────────────────────────────────── */}
         {/* 🧑‍🏫 PROFESSOR ROUTES */}
+        {/* ─────────────────────────────────────── */}
+        {/* 🧑‍🏫 PROFESSOR ROUTES                   */}
+        {/* ─────────────────────────────────────── */}
+
         <Route
           path="/professor/dashboard"
           element={
@@ -107,7 +112,6 @@ export default function App() {
           }
         />
 
-        {/* 👇 RUTA NOUĂ — STUDENT DETAILS */}
         <Route
           path="/professor/session/:sessionId/student/:studentId"
           element={
@@ -119,8 +123,21 @@ export default function App() {
           }
         />
 
+        {/* 🔴 SESIUNI LIVE */}
         <Route
-          path="/professor/sessions"
+          path="/professor/sessions/live"
+          element={
+            <ProtectedRoute>
+              <RoleRoute role="professor">
+                <ProfessorLiveSessionsList />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 📜 ISTORIC SESIUNI */}
+        <Route
+          path="/professor/sessions/history"
           element={
             <ProtectedRoute>
               <RoleRoute role="professor">
@@ -129,6 +146,8 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+
 
 
         {/* ─────────────────────────────────────── */}

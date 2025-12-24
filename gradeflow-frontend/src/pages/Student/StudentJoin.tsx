@@ -1,7 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
+import StudentNavbar from "../../components/StudentNavbar";
 
 export default function StudentJoin() {
+  const navigate = useNavigate();
+
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -10,7 +14,7 @@ export default function StudentJoin() {
     setError("");
 
     if (!code.trim()) {
-      setError("Introdu codul sesiunii!");
+      setError("Introdu codul sesiunii.");
       return;
     }
 
@@ -21,50 +25,68 @@ export default function StudentJoin() {
         session_code: code.trim().toUpperCase(),
       });
 
-      const sessionId = res.data.session_id;
-      window.location.href = `/student/session/${sessionId}`;
-
+      navigate(`/student/session/${res.data.session_id}`);
     } catch (err: any) {
-      console.error(err);
-      setError(err.response?.data?.error || "Cod invalid sau sesiune închisă.");
+      setError(
+        err.response?.data?.error ||
+          "Cod invalid sau sesiune închisă."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
-      <div className="bg-white shadow-lg rounded-2xl p-10 w-full max-w-md">
+    <div className="min-h-screen bg-[#f5f7fb]">
+      <StudentNavbar />
 
-        <h1 className="text-3xl font-bold text-center mb-6">
-          Join Quiz
-        </h1>
+      <div className="flex items-center justify-center px-4 py-16">
+        <div className="bg-white shadow-xl rounded-3xl p-10 w-full max-w-md border">
 
-        {error && (
-          <p className="mb-4 text-red-600 font-medium text-center">
-            {error}
+          <h1 className="text-3xl font-bold text-center mb-4">
+            Join Quiz
+          </h1>
+
+          <p className="text-center text-gray-600 mb-8">
+            Introdu codul sesiunii live pentru a începe quiz-ul.
           </p>
-        )}
 
-        <input
-          type="text"
-          placeholder="Cod sesiune"
-          value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase())}
-          onKeyDown={(e) => e.key === "Enter" && join()}
-          className="w-full p-3 border rounded-xl mb-4 tracking-widest text-center text-xl"
-        />
+          {error && (
+            <div className="mb-4 text-center text-red-600 font-medium">
+              {error}
+            </div>
+          )}
 
-        <button
-          onClick={join}
-          disabled={loading}
-          className={`w-full p-3 rounded-xl text-white 
-            ${loading ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"}
-          `}
-        >
-          {loading ? "Se conectează..." : "Intră în sesiune"}
-        </button>
+          <input
+            type="text"
+            placeholder="COD SESIUNE"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            onKeyDown={(e) => e.key === "Enter" && join()}
+            className="w-full p-4 border rounded-xl mb-6 tracking-widest text-center text-2xl font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
+          <button
+            onClick={join}
+            disabled={loading}
+            className={`w-full p-4 rounded-xl text-white text-lg font-semibold transition
+              ${
+                loading
+                  ? "bg-blue-400"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }
+            `}
+          >
+            {loading ? "Se conectează..." : "Intră în sesiune"}
+          </button>
+
+          <button
+            onClick={() => navigate("/student/dashboard")}
+            className="mt-6 w-full px-4 py-2 bg-gray-200 rounded-xl hover:bg-gray-300 transition"
+          >
+            ⬅ Înapoi la dashboard
+          </button>
+        </div>
       </div>
     </div>
   );

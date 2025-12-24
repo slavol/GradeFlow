@@ -1,4 +1,4 @@
-const pool = require("../db/database");
+const prisma = require("../../prisma/client");
 
 class StudentSessionRepository {
 
@@ -6,277 +6,268 @@ class StudentSessionRepository {
   // STUDENT JOINS SESSION
   // ======================================================
   static async joinSession(sessionCode, studentId) {
-    const sessionRes = await pool.query(
-      `SELECT * FROM quiz_sessions 
-       WHERE session_code = $1 AND status = 'active'`,
-      [sessionCode]
-    );
+    const session = await prisma.quiz_sessions.findFirst({
+      where: {
+        session_code: sessionCode,
+        status: "active",
+      },
+    });
 
-    if (sessionRes.rows.length === 0) return null;
+    if (!session) return null;
 
-    const session = sessionRes.rows[0];
+    const existing = await prisma.student_sessions.findFirst({
+      where: {
+        session_id: session.id,
+        student_id: Number(studentId),
+      },
+    });
 
-    // Student already joined?
-    const exists = await pool.query(
-      `SELECT * FROM student_sessions
-       WHERE session_id = $1 AND student_id = $2`,
-      [session.id, studentId]
-    );
-
-    if (exists.rows.length > 0) {
-      return { session, studentSession: exists.rows[0] };
+    if (existing) {
+      return { session, studentSession: existing };
     }
 
-    // New student session
-    const newSession = await pool.query(
-      `INSERT INTO student_sessions (session_id, student_id)
-       VALUES ($1, $2)
-       RETURNING *`,
-      [session.id, studentId]
-    );
+    const studentSession = await prisma.student_sessions.create({
+      data: {
+        session_id: session.id,
+        student_id: Number(studentId),
+      },
+    });
 
-    return { session, studentSession: newSession.rows[0] };
+    return { session, studentSession };
   }
 
   // ======================================================
   // GET SESSION + STUDENT SESSION
   // ======================================================
   static async getStudentSession(sessionId, studentId) {
-    const sessionRes = await pool.query(
-      `SELECT * FROM quiz_sessions WHERE id = $1`,
-      [sessionId]
-    );
+    const session = await prisma.quiz_sessions.findUnique({
+      where: { id: Number(sessionId) },
+    });
 
-    if (sessionRes.rows.length === 0) return null;
+    if (!session) return null;
 
-    const session = sessionRes.rows[0];
+    const studentSession = await prisma.student_sessions.findFirst({
+      where: {
+        session_id: session.id,
+        student_id: Number(studentId),
+      },
+    });
 
-    const stuRes = await pool.query(
-      `SELECT * FROM student_sessions
-       WHERE session_id = $1 AND student_id = $2`,
-      [sessionId, studentId]
-    );
-
-    if (stuRes.rows.length === 0) {
-      return { session, studentSession: null };
-    }
-
-    return { session, studentSession: stuRes.rows[0] };
+    return { session, studentSession };
   }
 
   // ======================================================
-  // GET TIME LIMIT FOR QUIZ (FROM QUIZ TABLE)
+  // GET QUIZ TIME LIMIT
   // ======================================================
   static async getQuizTimeLimit(sessionId) {
-    const res = await pool.query(
-      `SELECT q.time_limit
-       FROM quizzes q
-       JOIN quiz_sessions qs ON qs.quiz_id = q.id
-       WHERE qs.id = $1`,
-      [sessionId]
-    );
+    const res = await prisma.quiz_sessions.findUnique({
+      where: { id: Number(sessionId) },
+      include: {
+        quizzes: true,
+      },
+    });
 
-    if (res.rows.length === 0) return 0;
-    return res.rows[0].time_limit || 0;
+    return res?.quizzes?.time_limit ?? 0;
   }
 
   // ======================================================
   // GET QUIZ QUESTIONS
   // ======================================================
   static async getQuizQuestions(sessionId) {
-    const res = await pool.query(
-      `SELECT q.*
-       FROM questions q
-       WHERE q.quiz_id = (
-         SELECT quiz_id FROM quiz_sessions WHERE id = $1
-       )
-       ORDER BY position ASC`,
-      [sessionId]
-    );
+    const session = await prisma.quiz_sessions.findUnique({
+      where: { id: Number(sessionId) },
+      select: { quiz_id: true },
+    });
 
-    return res.rows;
+    if (!session) return [];
+
+    return prisma.questions.findMany({
+      where: { quiz_id: session.quiz_id },
+      orderBy: { position: "asc" },
+    });
   }
 
   // ======================================================
-  // GET OPTIONS FOR A QUESTION
+  // GET OPTIONS FOR QUESTION
   // ======================================================
   static async getQuestionOptions(questionId) {
-    const res = await pool.query(
-      `SELECT * FROM options WHERE question_id = $1`,
-      [questionId]
-    );
-    return res.rows;
+    return prisma.options.findMany({
+      where: { question_id: Number(questionId) },
+      orderBy: { id: "asc" },
+    });
   }
 
   // ======================================================
-  // CHECK IF A STUDENT ALREADY ANSWERED A QUESTION
+  // CHECK IF ANSWERED
   // ======================================================
   static async hasAnswered(studentSessionId, questionId) {
-    const res = await pool.query(
-      `SELECT 1 FROM student_answers
-       WHERE student_session_id = $1 AND question_id = $2`,
-      [studentSessionId, questionId]
-    );
+    const res = await prisma.student_answers.findFirst({
+      where: {
+        student_session_id: Number(studentSessionId),
+        question_id: Number(questionId),
+      },
+    });
 
-    return res.rows.length > 0;
+    return !!res;
   }
 
   // ======================================================
   // SAVE ANSWER
   // ======================================================
   static async saveAnswer(studentSessionId, questionId, selectedIds, isCorrect) {
-    await pool.query(
-      `INSERT INTO student_answers (student_session_id, question_id, selected_option_ids, is_correct)
-       VALUES ($1, $2, $3, $4)`,
-      [studentSessionId, questionId, selectedIds, isCorrect]
-    );
+    await prisma.student_answers.create({
+      data: {
+        student_session_id: Number(studentSessionId),
+        question_id: Number(questionId),
+        selected_option_ids: selectedIds,
+        is_correct: isCorrect,
+      },
+    });
   }
 
   // ======================================================
   // INCREMENT SCORE
   // ======================================================
   static async incrementScore(studentSessionId) {
-    await pool.query(
-      `UPDATE student_sessions
-       SET score = score + 1
-       WHERE id = $1`,
-      [studentSessionId]
-    );
+    await prisma.student_sessions.update({
+      where: { id: Number(studentSessionId) },
+      data: {
+        score: { increment: 1 },
+      },
+    });
   }
 
   // ======================================================
   // ADVANCE QUESTION INDEX
   // ======================================================
   static async advanceQuestion(studentSessionId) {
-    await pool.query(
-      `UPDATE student_sessions
-       SET current_index = current_index + 1
-       WHERE id = $1`,
-      [studentSessionId]
-    );
+    await prisma.student_sessions.update({
+      where: { id: Number(studentSessionId) },
+      data: {
+        current_index: { increment: 1 },
+      },
+    });
   }
 
   // ======================================================
-  // MARK SESSION AS COMPLETED
+  // MARK COMPLETED
   // ======================================================
   static async markCompleted(studentSessionId) {
-    await pool.query(
-      `UPDATE student_sessions
-       SET completed = true,
-           finished_at = NOW()
-       WHERE id = $1`,
-      [studentSessionId]
-    );
+    await prisma.student_sessions.update({
+      where: { id: Number(studentSessionId) },
+      data: {
+        completed: true,
+        finished_at: new Date(),
+      },
+    });
   }
 
   // ======================================================
   // GET CORRECT OPTION IDS
   // ======================================================
   static async getCorrectOptionIds(questionId) {
-    const res = await pool.query(
-      `SELECT id FROM options 
-       WHERE question_id = $1 AND is_correct = true`,
-      [questionId]
-    );
-    return res.rows.map((r) => r.id);
+    const res = await prisma.options.findMany({
+      where: {
+        question_id: Number(questionId),
+        is_correct: true,
+      },
+      select: { id: true },
+    });
+
+    return res.map(r => r.id);
   }
 
   static async getSelectedOptionIds(studentSessionId, questionId) {
-    const res = await pool.query(
-      `SELECT selected_option_ids 
-     FROM student_answers 
-     WHERE student_session_id = $1 AND question_id = $2`,
-      [studentSessionId, questionId]
-    );
+    const res = await prisma.student_answers.findFirst({
+      where: {
+        student_session_id: Number(studentSessionId),
+        question_id: Number(questionId),
+      },
+      select: {
+        selected_option_ids: true,
+      },
+    });
 
-    if (res.rows.length === 0) return [];
-
-    return res.rows[0].selected_option_ids || [];
+    return res?.selected_option_ids ?? [];
   }
 
-  // ----------------------------------
-  // Get student's answers
-  // ----------------------------------
+  // ======================================================
+  // GET STUDENT ANSWERS
+  // ======================================================
   static async getStudentAnswers(studentSessionId) {
-    const res = await pool.query(
-      `SELECT * FROM student_answers
-     WHERE student_session_id = $1`,
-      [studentSessionId]
-    );
-    return res.rows;
+    return prisma.student_answers.findMany({
+      where: { student_session_id: Number(studentSessionId) },
+    });
   }
 
-  // ----------------------------------
-  // Leaderboard for the session
-  // ----------------------------------
+  // ======================================================
+  // LEADERBOARD
+  // ======================================================
   static async getLeaderboard(sessionId) {
-    const res = await pool.query(
-      `SELECT 
-        u.email,
-        ss.score,
-        ss.completed,
-        ss.finished_at
-     FROM student_sessions ss
-     JOIN users u ON u.id = ss.student_id
-     WHERE ss.session_id = $1
-     ORDER BY ss.score DESC, ss.finished_at ASC NULLS LAST`,
-      [sessionId]
-    );
+  const rows = await prisma.student_sessions.findMany({
+    where: {
+      session_id: Number(sessionId),
+      completed: true,
+    },
+    include: {
+      users: {
+        select: { email: true },
+      },
+    },
+    orderBy: [
+      { score: "desc" },
+      { finished_at: "asc" },
+    ],
+  });
 
-    return res.rows;
-  }
+  return rows.map(r => ({
+    student_session_id: r.id,
+    email: r.users?.email ?? null,
+    score: r.score,
+    finished_at: r.finished_at,
+  }));
+}
 
-  static async getQuizTimeLimit(sessionId) {
-    const res = await pool.query(
-      `SELECT q.time_limit
-     FROM quizzes q
-     JOIN quiz_sessions s ON s.quiz_id = q.id
-     WHERE s.id = $1`,
-      [sessionId]
-    );
-
-    return res.rows.length ? res.rows[0].time_limit : 0;
-  }
-
+  // ======================================================
+  // OPTION TEXTS
+  // ======================================================
   static async getOptionTexts(optionIds) {
     if (!optionIds || optionIds.length === 0) return [];
 
-    const res = await pool.query(
-      `SELECT id, text FROM options WHERE id = ANY($1)`,
-      [optionIds]
-    );
-
-    return res.rows;
+    return prisma.options.findMany({
+      where: {
+        id: { in: optionIds },
+      },
+      select: {
+        id: true,
+        text: true,
+      },
+    });
   }
 
-// =====================================================
-// GET STUDENT RESULT HISTORY
-// =====================================================
-static async getStudentHistory(studentId) {
-  const res = await pool.query(
-    `
-    SELECT 
-      ss.id AS student_session_id,
-      ss.session_id,
-      ss.score,
-      ss.completed,
-      ss.finished_at,
-      q.title AS quiz_title,
-      q.id AS quiz_id
-    FROM student_sessions ss
-    JOIN quiz_sessions qs ON ss.session_id = qs.id
-    JOIN quizzes q ON qs.quiz_id = q.id
-    WHERE ss.student_id = $1
-    ORDER BY ss.finished_at DESC NULLS LAST
-    `,
-    [studentId]
-  );
-
-  return res.rows;
-}
-
-
-
+  // ======================================================
+  // STUDENT HISTORY
+  // ======================================================
+  static async getStudentHistory(studentId) {
+    return prisma.student_sessions.findMany({
+      where: { student_id: Number(studentId) },
+      include: {
+        quiz_sessions: {
+          include: {
+            quizzes: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        finished_at: "desc",
+      },
+    });
+  }
 }
 
 module.exports = StudentSessionRepository;

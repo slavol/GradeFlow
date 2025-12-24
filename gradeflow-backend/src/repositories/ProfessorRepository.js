@@ -1,41 +1,53 @@
-const pool = require("../db/database");
+const prisma = require("../../prisma/client");
 
 class ProfessorRepository {
 
   // =============================
-  //  GET DASHBOARD STATISTICS
+  // GET DASHBOARD STATISTICS
   // =============================
   static async getDashboardStats(professorId) {
+    // -----------------------------
     // total quizzes created
-    const quizCountRes = await pool.query(
-      `SELECT COUNT(*) 
-       FROM quizzes 
-       WHERE professor_id = $1`,
-      [professorId]
-    );
+    // -----------------------------
+    const totalQuizzes = await prisma.quizzes.count({
+      where: {
+        professor_id: professorId,
+      },
+    });
 
+    // -----------------------------
     // total questions written
-    const questionCountRes = await pool.query(
-      `SELECT COUNT(*) 
-       FROM questions q
-       JOIN quizzes qz ON qz.id = q.quiz_id
-       WHERE qz.professor_id = $1`,
-      [professorId]
-    );
+    // -----------------------------
+    const totalQuestions = await prisma.questions.count({
+      where: {
+        quizzes: {
+          professor_id: professorId,
+        },
+      },
+    });
 
-    // total students graded (distinct)
-    const studentsRes = await pool.query(
-      `SELECT COUNT(DISTINCT ss.student_id) 
-       FROM student_sessions ss
-       JOIN quiz_sessions s ON s.id = ss.session_id
-       WHERE s.professor_id = $1`,
-      [professorId]
-    );
+    // -----------------------------
+    // total distinct students graded
+    // (Prisma 5 workaround)
+    // -----------------------------
+    const students = await prisma.student_sessions.findMany({
+      where: {
+        quiz_sessions: {
+          professor_id: professorId,
+        },
+      },
+      distinct: ["student_id"],
+      select: {
+        student_id: true,
+      },
+    });
+
+    const totalStudents = students.length;
 
     return {
-      total_quizzes: Number(quizCountRes.rows[0].count),
-      total_questions: Number(questionCountRes.rows[0].count),
-      total_students: Number(studentsRes.rows[0].count),
+      total_quizzes: totalQuizzes,
+      total_questions: totalQuestions,
+      total_students: totalStudents,
     };
   }
 }

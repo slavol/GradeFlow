@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api/api";
+import StudentNavbar from "../../components/StudentNavbar";
 
 interface AnswerDetails {
   question_id: number;
@@ -27,6 +28,9 @@ export default function StudentResults() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // =====================================
+  // LOAD RESULTS
+  // =====================================
   const loadResults = async () => {
     try {
       const res = await api.get(`/student/session/${sessionId}/results`);
@@ -35,8 +39,8 @@ export default function StudentResults() {
       setTotal(res.data.total);
       setAnswers(res.data.answers);
       setLeaderboard(res.data.leaderboard);
-    } catch (err: any) {
-      console.error("RESULTS LOAD ERROR:", err);
+    } catch (err) {
+      console.error(err);
       alert("Nu s-au putut încărca rezultatele.");
       navigate("/student/dashboard");
     } finally {
@@ -48,52 +52,48 @@ export default function StudentResults() {
     loadResults();
   }, []);
 
-  if (loading)
-    return <div className="p-10 text-center">Se încarcă rezultatele...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <StudentNavbar />
+        <div className="p-10 text-center">Se încarcă rezultatele...</div>
+      </div>
+    );
+  }
+
+  const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-[#f5f7fb]">
+      <StudentNavbar />
 
-      {/* BACK BUTTON */}
-      <div className="max-w-3xl mx-auto mb-4">
-        <button
-          onClick={() => navigate("/student/dashboard")}
-          className="mb-6 px-5 py-2 bg-gray-700 text-white rounded-xl hover:bg-gray-800 transition"
-        >
-          ← Înapoi la Dashboard
-        </button>
-      </div>
+      <div className="max-w-4xl mx-auto px-4 py-10 space-y-10">
 
-      {/* SCORE CARD */}
-      <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-2xl p-8 mb-10 text-center border">
-        <h1 className="text-3xl font-bold mb-4">🎉 Rezultatele tale</h1>
+        {/* SCORE CARD */}
+        <div className="bg-white rounded-2xl shadow p-8 border text-center">
+          <h1 className="text-3xl font-bold mb-4">🎉 Rezultatele tale</h1>
 
-        <p className="text-xl text-gray-700 mb-4">Ai răspuns corect la:</p>
+          <div className="text-6xl font-extrabold text-blue-600 mb-2">
+            {score} / {total}
+          </div>
 
-        <div className="text-5xl font-extrabold text-blue-600 mb-2">
-          {score} / {total}
+          <p className="text-lg text-gray-600">
+            {percentage}% răspunsuri corecte
+          </p>
         </div>
 
-        <div className="text-lg text-gray-600">
-          {Math.round((score / total) * 100)}% scor final
-        </div>
-      </div>
+        {/* ANSWERS */}
+        <div className="bg-white rounded-2xl shadow p-8 border">
+          <h2 className="text-2xl font-bold mb-6">📘 Răspunsuri detaliate</h2>
 
-      {/* DETAILED ANSWERS */}
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow p-8 border mb-10">
-        <h2 className="text-2xl font-bold mb-6">📘 Rezultate detaliate</h2>
-
-        <div className="space-y-6">
-          {answers.map((a, index) => {
-            const correct = a.is_correct;
-
-            return (
+          <div className="space-y-6">
+            {answers.map((a, index) => (
               <div
                 key={a.question_id}
-                className={`p-4 rounded-xl border ${
-                  correct
-                    ? "bg-green-100 border-green-400"
-                    : "bg-red-100 border-red-400"
+                className={`p-5 rounded-xl border ${
+                  a.is_correct
+                    ? "bg-green-50 border-green-400"
+                    : "bg-red-50 border-red-400"
                 }`}
               >
                 <p className="font-semibold mb-2">
@@ -102,49 +102,60 @@ export default function StudentResults() {
 
                 <p className="text-sm">
                   <strong>Răspunsul tău:</strong>{" "}
-                  {a.selected_answers?.length
-                    ? a.selected_answers.map((ans) => ans.text).join(", ")
-                    : "Niciun răspuns"}
+                  {a.selected_answers.length
+                    ? a.selected_answers.map((x) => x.text).join(", ")
+                    : "—"}
                 </p>
 
                 <p className="text-sm">
                   <strong>Răspuns corect:</strong>{" "}
-                  {a.correct_answers.map((ans) => ans.text).join(", ")}
+                  {a.correct_answers.map((x) => x.text).join(", ")}
                 </p>
 
                 <p
                   className={`mt-2 font-bold ${
-                    correct ? "text-green-700" : "text-red-700"
+                    a.is_correct ? "text-green-700" : "text-red-700"
                   }`}
                 >
-                  {correct ? "✔ Corect" : "✘ Greșit"}
+                  {a.is_correct ? "✔ Corect" : "✘ Greșit"}
                 </p>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* LEADERBOARD */}
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow p-8 border">
-        <h2 className="text-2xl font-bold mb-6">🏆 Clasament</h2>
+        {/* LEADERBOARD */}
+        <div className="bg-white rounded-2xl shadow p-8 border">
+          <h2 className="text-2xl font-bold mb-6">🏆 Clasament</h2>
 
-        <div className="space-y-2">
-          {leaderboard.map((entry, i) => (
-            <div
-              key={entry.email}
-              className="flex justify-between items-center p-3 rounded-lg bg-gray-50 border"
-            >
-              <span className="font-semibold">
-                #{i + 1} — {entry.email}
-              </span>
+          <div className="space-y-3">
+            {leaderboard.map((entry, i) => (
+              <div
+                key={entry.email}
+                className="flex justify-between items-center p-4 bg-gray-50 rounded-xl border"
+              >
+                <span className="font-semibold">
+                  #{i + 1} — {entry.email}
+                </span>
 
-              <span className="text-blue-600 font-bold">
-                {entry.score} puncte
-              </span>
-            </div>
-          ))}
+                <span className="text-blue-600 font-bold">
+                  {entry.score} pct
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* BACK */}
+        <div className="text-center">
+          <button
+            onClick={() => navigate("/student/dashboard")}
+            className="px-6 py-3 bg-gray-300 rounded-xl hover:bg-gray-400 transition"
+          >
+            ⬅ Înapoi la Dashboard
+          </button>
+        </div>
+
       </div>
     </div>
   );

@@ -59,4 +59,12 @@ router.get(
   ProfessorSessionController.exportCSV
 );
 
+// GET /professor/sessions/live
+router.get(
+  "/sessions/live",
+  auth,
+  requireRole("professor"),
+  ProfessorSessionController.getLiveSessions
+);
+
 module.exports = router;

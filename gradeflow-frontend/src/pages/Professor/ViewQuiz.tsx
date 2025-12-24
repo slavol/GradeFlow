@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api/api";
+import ProfessorNavbar from "../../components/ProfessorNavbar";
 
 interface Option {
   id: number;
@@ -34,11 +35,12 @@ export default function ViewQuiz() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<number | null>(null);
 
+  // =========================
+  // LOAD QUIZ
+  // =========================
   const loadQuiz = async () => {
     try {
       const res = await api.get(`/professor/quiz/${id}`);
-      console.log("QUIZ RESPONSE:", res.data);
-
       setQuiz(res.data);
     } catch (err) {
       console.error(err);
@@ -58,159 +60,176 @@ export default function ViewQuiz() {
   const copyJoinCode = () => {
     if (!quiz) return;
     navigator.clipboard.writeText(quiz.join_code);
-    alert("Cod copiat în clipboard!");
+    alert("Cod copiat!");
   };
 
   const startSession = async () => {
     try {
       const res = await api.post(`/professor/quiz/${id}/start`);
-      const session = res.data.session;
-
-      navigate(`/professor/session/${session.id}`);
-    } catch (err) {
-      console.error(err);
+      navigate(`/professor/session/${res.data.session.id}`);
+    } catch {
       alert("Eroare la pornirea sesiunii");
     }
   };
 
-  // ---------------------------------------------------------
+  // =========================
+  // UI STATES
+  // =========================
+  if (loading)
+    return (
+      <div className="min-h-screen bg-[#f7f8fc]">
+        <ProfessorNavbar />
+        <div className="p-10 text-center">Se încarcă...</div>
+      </div>
+    );
+
+  if (!quiz)
+    return (
+      <div className="min-h-screen bg-[#f7f8fc]">
+        <ProfessorNavbar />
+        <div className="p-10 text-center">Quiz inexistent.</div>
+      </div>
+    );
+
+  // =========================
   // UI
-  // ---------------------------------------------------------
-
-  if (loading) return <div className="p-10 text-center">Se încarcă...</div>;
-  if (!quiz) return <div className="p-10 text-center">Quiz inexistent.</div>;
-
+  // =========================
   return (
-    <div className="min-h-screen bg-[#f4f6fc] p-8">
-      <div className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-lg border">
+    <div className="min-h-screen bg-[#f7f8fc]">
+      <ProfessorNavbar />
 
+      <div className="max-w-5xl mx-auto px-4 py-8">
         {/* HEADER */}
-        <div className="flex justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{quiz.title}</h1>
-            <p className="text-gray-600 mt-1">
-              {quiz.description || "Fără descriere"}
-            </p>
-          </div>
-
-          <div className="text-right">
-            <p className="text-gray-500">Cod de alăturare:</p>
-
-            <div className="flex items-center gap-2 justify-end">
-              <p className="font-mono text-xl font-semibold">
-                {quiz.join_code}
+        <div className="bg-white rounded-2xl shadow border p-6 mb-8">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {quiz.title}
+              </h1>
+              <p className="text-gray-600 mt-1">
+                {quiz.description || "Fără descriere"}
               </p>
+            </div>
 
-              <button
-                onClick={copyJoinCode}
-                className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
-              >
-                📋 Copiază
-              </button>
+            <div className="text-right">
+              <p className="text-gray-500 text-sm">Cod de alăturare</p>
+              <div className="flex items-center gap-2 justify-end">
+                <span className="font-mono text-xl font-bold">
+                  {quiz.join_code}
+                </span>
+                <button
+                  onClick={copyJoinCode}
+                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                >
+                  📋
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* INFO */}
-        <div className="flex gap-4 mb-6 text-gray-700">
-          <div className="p-3 bg-gray-100 rounded-xl">
-            ⏳ Timp: <strong>{quiz.time_limit} min</strong>
-          </div>
-
-          <div className="p-3 bg-gray-100 rounded-xl">
-            ❓ Întrebări: <strong>{quiz.questions.length}</strong>
-          </div>
-
-          <div className="p-3 bg-gray-100 rounded-xl">
-            🧠 Tip: <strong>{quiz.creation_type}</strong>
+          {/* INFO CARDS */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+            <InfoCard label="⏳ Timp" value={`${quiz.time_limit} min`} />
+            <InfoCard
+              label="❓ Întrebări"
+              value={quiz.questions.length}
+            />
+            <InfoCard label="🧠 Tip" value={quiz.creation_type} />
           </div>
         </div>
 
-        <hr className="my-6" />
+        {/* QUESTIONS */}
+        <div className="bg-white rounded-2xl shadow border p-6">
+          <h2 className="text-2xl font-semibold mb-6">Întrebări</h2>
 
-        {/* LISTA ÎNTREBĂRI */}
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-          Întrebări
-        </h2>
+          <div className="space-y-4">
+            {quiz.questions.map((q, index) => {
+              const open = expanded === index;
 
-        <div className="space-y-6">
-          {quiz.questions.map((q, index) => {
-            const isOpen = expanded === index;
-
-            return (
-              <div
-                key={q.id}
-                className="p-6 bg-gray-50 rounded-xl border shadow-sm"
-              >
+              return (
                 <div
-                  className="flex justify-between items-center cursor-pointer"
-                  onClick={() => toggleExpand(index)}
+                  key={q.id}
+                  className="border rounded-xl p-5 bg-gray-50"
                 >
-                  <h3 className="text-xl font-medium text-gray-800">
-                    {index + 1}. {q.title}
-                  </h3>
-
-                  <span className="text-gray-600 text-xl">
-                    {isOpen ? "▲" : "▼"}
-                  </span>
-                </div>
-
-                <p className="text-gray-500 mt-1">
-                  Tip:{" "}
-                  <strong>
-                    {q.question_type === "single"
-                      ? "Un singur răspuns"
-                      : "Răspunsuri multiple"}
-                  </strong>
-                </p>
-
-                {/* OPTIONS LIST */}
-                {isOpen && (
-                  <div className="mt-4 space-y-2">
-                    {q.options.map((opt) => (
-                      <div
-                        key={opt.id}
-                        className={`p-3 rounded-lg border ${
-                          opt.is_correct
-                            ? "bg-green-100 border-green-300"
-                            : "bg-white"
-                        }`}
-                      >
-                        {opt.text}
-                      </div>
-                    ))}
+                  <div
+                    className="flex justify-between items-center cursor-pointer"
+                    onClick={() => toggleExpand(index)}
+                  >
+                    <h3 className="font-medium text-lg">
+                      {index + 1}. {q.title}
+                    </h3>
+                    <span className="text-xl">
+                      {open ? "▲" : "▼"}
+                    </span>
                   </div>
-                )}
-              </div>
-            );
-          })}
+
+                  <p className="text-gray-500 mt-1">
+                    Tip:{" "}
+                    <strong>
+                      {q.question_type === "single"
+                        ? "Un singur răspuns"
+                        : "Răspunsuri multiple"}
+                    </strong>
+                  </p>
+
+                  {open && (
+                    <div className="mt-4 space-y-2">
+                      {q.options.map((opt) => (
+                        <div
+                          key={opt.id}
+                          className={`p-3 rounded-lg border ${
+                            opt.is_correct
+                              ? "bg-green-100 border-green-300"
+                              : "bg-white"
+                          }`}
+                        >
+                          {opt.text}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        {/* BUTTONS */}
-        <div className="mt-8 flex justify-end gap-4">
+        {/* ACTIONS */}
+        <div className="mt-8 flex flex-col sm:flex-row gap-4">
+          <button
+            onClick={startSession}
+            className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700"
+          >
+            ▶ Pornește sesiunea live
+          </button>
 
           <button
             onClick={() => navigate(`/professor/edit-quiz/${quiz.id}`)}
-            className="px-5 py-3 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600"
+            className="flex-1 px-6 py-3 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600"
           >
-            ✏️ Editează Quiz
+            ✏️ Editează quiz
           </button>
 
           <button
             onClick={() => navigate("/professor/dashboard")}
-            className="px-5 py-3 bg-gray-300 rounded-xl hover:bg-gray-400"
+            className="flex-1 px-6 py-3 bg-gray-300 rounded-xl hover:bg-gray-400"
           >
-            ⬅ Înapoi la Dashboard
-          </button>
-
-          <button
-            onClick={startSession}
-            className="px-5 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700"
-          >
-            ▶ Pornește sesiunea live
+            ⬅ Dashboard
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// =========================
+// INFO CARD
+// =========================
+function InfoCard({ label, value }: { label: string; value: any }) {
+  return (
+    <div className="bg-white border rounded-xl p-4 text-center shadow-sm">
+      <p className="text-gray-500 text-sm">{label}</p>
+      <p className="text-xl font-bold text-blue-600 mt-1">{value}</p>
     </div>
   );
 }

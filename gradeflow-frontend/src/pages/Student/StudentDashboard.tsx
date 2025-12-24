@@ -1,15 +1,25 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../../api/api";
+import StudentNavbar from "../../components/StudentNavbar";
+
+interface HistoryItem {
+  student_session_id: number;
+  session_id: number;
+  quiz_title: string;
+  score: number;
+  completed: boolean;
+  finished_at?: string;
+}
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
 
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // =============================================
-  // LOAD HISTORY FROM BACKEND
+  // LOAD HISTORY
   // =============================================
   const loadHistory = async () => {
     try {
@@ -17,6 +27,7 @@ export default function StudentDashboard() {
       setHistory(res.data.history || []);
     } catch (err) {
       console.error("HISTORY LOAD ERROR:", err);
+      setHistory([]);
     } finally {
       setLoading(false);
     }
@@ -27,68 +38,95 @@ export default function StudentDashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f5f7fb] flex items-center justify-center p-8">
-      <div className="bg-white shadow-xl rounded-3xl p-10 w-full max-w-xl border border-gray-200">
+    <div className="min-h-screen bg-[#f5f7fb]">
+      <StudentNavbar />
+
+      <div className="max-w-6xl mx-auto px-4 py-10">
 
         {/* HEADER */}
-        <h1 className="text-4xl font-bold text-gray-900 text-center">
-          Student Dashboard
-        </h1>
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900">
+            Student Dashboard
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Intră într-un quiz sau verifică rezultatele tale anterioare.
+          </p>
+        </div>
 
-        <p className="text-gray-600 text-center mt-2">
-          Bine ai venit! Poți intra într-o sesiune de quiz folosind codul oferit de profesor.
-        </p>
+        {/* JOIN QUIZ CARD */}
+        <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-200 text-center mb-12">
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">
+            🚀 Alătură-te unui Quiz
+          </h2>
 
-        {/* JOIN BUTTON */}
-        <div className="mt-10 flex justify-center">
+          <p className="text-gray-600 mb-6">
+            Introdu codul primit de la profesor pentru a începe.
+          </p>
+
           <Link
             to="/student/join"
-            className="px-8 py-4 bg-blue-600 text-white text-lg rounded-xl shadow hover:bg-blue-700 transition"
+            className="inline-block px-8 py-4 bg-blue-600 text-white text-lg rounded-xl shadow hover:bg-blue-700 transition font-semibold"
           >
-            🚀 Join Quiz
+            Join Quiz
           </Link>
         </div>
 
-        {/* HISTORY SECTION */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
-            📘 Istoricul Rezultatelor
+        {/* HISTORY */}
+        <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            📘 Istoric rezultate
           </h2>
 
           {loading ? (
             <p className="text-center text-gray-500">Se încarcă...</p>
           ) : history.length === 0 ? (
             <p className="text-center text-gray-500">
-              Nu ai participat la niciun quiz încă.
+              Nu ai participat încă la niciun quiz.
             </p>
           ) : (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {history.map((h) => (
                 <div
                   key={h.student_session_id}
-                  className="p-4 bg-gray-50 border rounded-xl shadow-sm"
+                  className="p-6 bg-gray-50 rounded-2xl border shadow-sm flex flex-col justify-between"
                 >
-                  <p className="font-semibold text-lg">{h.quiz_title}</p>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {h.quiz_title}
+                    </h3>
 
-                  <p className="text-sm text-gray-600">
-                    Scor: <strong>{h.score}</strong>
-                  </p>
-
-                  <p className="text-sm text-gray-600">
-                    {h.completed ? "✔ Finalizat" : "⏳ În desfășurare"}
-                  </p>
-
-                  {h.finished_at && (
-                    <p className="text-xs text-gray-500">
-                      Terminare: {new Date(h.finished_at).toLocaleString()}
+                    <p className="text-sm text-gray-600 mt-2">
+                      Scor:{" "}
+                      <span className="font-semibold">
+                        {h.completed ? `${h.score} pct` : "—"}
+                      </span>
                     </p>
-                  )}
+
+                    <p className="text-sm mt-1">
+                      {h.completed ? (
+                        <span className="text-green-600 font-semibold">
+                          ✔ Finalizat
+                        </span>
+                      ) : (
+                        <span className="text-orange-600 font-semibold">
+                          ⏳ În desfășurare
+                        </span>
+                      )}
+                    </p>
+
+                    {h.finished_at && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Finalizat la{" "}
+                        {new Date(h.finished_at).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
 
                   <button
                     onClick={() =>
                       navigate(`/student/session/${h.session_id}/results`)
                     }
-                    className="mt-3 px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
+                    className="mt-5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-semibold"
                   >
                     Vezi rezultatele
                   </button>
@@ -97,20 +135,6 @@ export default function StudentDashboard() {
             </div>
           )}
         </div>
-
-        {/* LOGOUT */}
-        <div className="mt-10 text-center">
-          <button
-            onClick={() => {
-              localStorage.removeItem("token");
-              window.location.href = "/";
-            }}
-            className="px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition"
-          >
-            Logout
-          </button>
-        </div>
-
       </div>
     </div>
   );

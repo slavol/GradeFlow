@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api/api";
+import ProfessorNavbar from "../../components/ProfessorNavbar";
 
-// ===== TYPES =====
+/* ================= TYPES ================= */
+
 type StudentRow = {
   student_session_id: number;
   email: string;
@@ -30,16 +32,17 @@ type SessionData = {
   analytics: QuestionAnalytics[];
 };
 
+/* ================= COMPONENT ================= */
+
 export default function SessionResults() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [data, setData] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // =====================================================
-  // LOAD SESSION RESULTS
-  // =====================================================
+  /* ================= LOAD RESULTS ================= */
+
   const loadResults = async () => {
     try {
       const res = await api.get(`/professor/session/${id}/results`);
@@ -59,15 +62,14 @@ export default function SessionResults() {
 
   useEffect(() => {
     loadResults();
-  }, []);
+  }, [id]);
 
-  // =====================================================
-  // EXPORT CSV (Axios + blob = NO 401 error)
-  // =====================================================
+  /* ================= EXPORT CSV ================= */
+
   const handleCSVDownload = async () => {
     try {
       const res = await api.get(`/professor/session/${id}/export`, {
-        responseType: "blob", // <-- IMPORTANT
+        responseType: "blob",
       });
 
       const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -77,17 +79,36 @@ export default function SessionResults() {
       link.setAttribute("download", `session_${id}_results.csv`);
       document.body.appendChild(link);
       link.click();
+      link.remove();
     } catch (err) {
-      console.error("CSV EXPORT ERROR:", err);
-      alert("Nu s-a putut descărca fișierul CSV.");
+      console.error(err);
+      alert("Nu s-a putut descărca CSV.");
     }
   };
 
-  if (loading)
-    return <div className="p-10 text-center">Se încarcă rezultatele...</div>;
+  /* ================= STATES ================= */
 
-  if (!data)
-    return <div className="p-10 text-center">Nu există rezultate pentru această sesiune.</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f7f8fc]">
+        <ProfessorNavbar />
+        <div className="p-10 text-center text-gray-600">
+          Se încarcă rezultatele…
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-[#f7f8fc]">
+        <ProfessorNavbar />
+        <div className="p-10 text-center text-gray-600">
+          Nu există rezultate pentru această sesiune.
+        </div>
+      </div>
+    );
+  }
 
   const { session, students, analytics } = data;
 
@@ -103,144 +124,198 @@ export default function SessionResults() {
         )
       : 0;
 
+  /* ================= UI ================= */
+
   return (
-    <div className="min-h-screen bg-[#f4f6fc] p-8">
+    <div className="min-h-screen bg-[#f7f8fc]">
+      <ProfessorNavbar />
 
-      {/* HEADER */}
-      <div className="max-w-5xl mx-auto bg-white shadow-xl rounded-2xl p-8 border border-gray-200">
+      <div className="max-w-6xl mx-auto px-4 py-8">
 
-        <div className="flex justify-between items-start">
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row md:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Rezultate sesiune</h1>
-
-            <p className="text-gray-500 mt-1">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Rezultate sesiune
+            </h1>
+            <p className="text-gray-600 mt-1">
               Quiz #{session.quiz_id} • {total} participanți
             </p>
           </div>
 
-          <div className="text-right">
-            <p className="text-gray-600">Cod sesiune:</p>
-            <p className="font-mono text-xl font-bold">{session.session_code}</p>
+          <div className="md:text-right">
+            <p className="text-sm text-gray-600">Cod sesiune</p>
+            <p className="font-mono text-xl font-bold">
+              {session.session_code}
+            </p>
 
-            {/* EXPORT CSV BUTTON */}
             <button
               onClick={handleCSVDownload}
-              className="mt-3 inline-block px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition"
+              className="mt-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
             >
               📥 Export CSV
             </button>
           </div>
         </div>
 
-        {/* STATISTICS */}
-        <div className="grid grid-cols-3 gap-6 mt-8">
+        {/* STATS */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
           <StatCard title="Participanți" value={total} />
           <StatCard title="Finalizate" value={completed} />
           <StatCard title="Scor mediu" value={avgScore} />
         </div>
 
-        {/* STUDENTS TABLE */}
-        <h2 className="text-2xl font-semibold text-gray-800 mt-10">Studenți</h2>
+        {/* STUDENTS */}
+        <div className="bg-white rounded-2xl shadow p-6 border mb-10">
+          <h2 className="text-2xl font-semibold mb-6">Studenți</h2>
 
-        <div className="mt-4 overflow-hidden border rounded-xl">
-          <table className="w-full border-collapse">
-            <thead className="bg-gray-100 border-b">
-              <tr className="text-left text-gray-700">
-                <th className="p-3">Email</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Scor</th>
-                <th className="p-3 text-right">Detalii</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {students.map((s) => (
-                <tr key={s.student_session_id} className="border-b hover:bg-gray-50 transition">
-                  <td className="p-3">{s.email}</td>
-
-                  <td className="p-3">
-                    {s.completed ? (
-                      <span className="text-green-600 font-semibold">Finalizat</span>
-                    ) : (
-                      <span className="text-orange-600 font-semibold">În progres</span>
-                    )}
-                  </td>
-
-                  <td className="p-3">
-                    {s.completed ? (
-                      <span className="font-semibold">{s.score} pct</span>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-
-                  <td className="p-3 text-right">
-                    {s.completed && (
-                      <button
-                        onClick={() =>
-                          navigate(`/professor/session/${id}/student/${s.student_session_id}`)
-                        }
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                      >
-                        Vezi detalii
-                      </button>
-                    )}
-                  </td>
+          {/* DESKTOP */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead className="border-b bg-gray-100">
+                <tr>
+                  <th className="p-3 text-left">Email</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3">Scor</th>
+                  <th className="p-3 text-right">Detalii</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {students.map((s) => (
+                  <tr key={s.student_session_id} className="border-b hover:bg-gray-50">
+                    <td className="p-3">{s.email}</td>
+
+                    <td className="p-3">
+                      {s.completed ? (
+                        <span className="text-green-600 font-semibold">Finalizat</span>
+                      ) : (
+                        <span className="text-orange-600 font-semibold">În progres</span>
+                      )}
+                    </td>
+
+                    <td className="p-3">
+                      {s.completed ? `${s.score} pct` : "—"}
+                    </td>
+
+                    <td className="p-3 text-right">
+                      {s.completed && (
+                        <button
+                          onClick={() =>
+                            navigate(
+                              `/professor/session/${id}/student/${s.student_session_id}`
+                            )
+                          }
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                          Vezi detalii
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* MOBILE */}
+          <div className="md:hidden space-y-4">
+            {students.map((s) => (
+              <div
+                key={s.student_session_id}
+                className="border rounded-xl p-4 shadow-sm"
+              >
+                <p className="font-semibold">{s.email}</p>
+
+                <p className="text-sm mt-1">
+                  Status:{" "}
+                  <span
+                    className={
+                      s.completed ? "text-green-600" : "text-orange-600"
+                    }
+                  >
+                    {s.completed ? "Finalizat" : "În progres"}
+                  </span>
+                </p>
+
+                <p className="text-sm">
+                  Scor: {s.completed ? `${s.score} pct` : "—"}
+                </p>
+
+                {s.completed && (
+                  <button
+                    onClick={() =>
+                      navigate(
+                        `/professor/session/${id}/student/${s.student_session_id}`
+                      )
+                    }
+                    className="mt-3 w-full px-4 py-2 bg-blue-600 text-white rounded-lg"
+                  >
+                    Vezi detalii
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* BACK BUTTON */}
+        {/* ANALYTICS */}
+        <div className="bg-white rounded-2xl shadow p-6 border mb-10">
+          <h2 className="text-2xl font-semibold mb-6">
+            Analytics pe întrebări
+          </h2>
+
+          <div className="space-y-4">
+            {analytics.map((q) => {
+              const rate =
+                q.total_answers > 0
+                  ? Math.round(
+                      (q.correct_answers / q.total_answers) * 100
+                    )
+                  : 0;
+
+              return (
+                <div
+                  key={q.question_id}
+                  className="p-4 bg-gray-50 rounded-xl border"
+                >
+                  <p className="font-medium">
+                    {q.position + 1}. {q.title}
+                  </p>
+
+                  <p className="text-sm text-gray-600 mt-1">
+                    Corecte: {q.correct_answers}/{q.total_answers} ({rate}%)
+                  </p>
+
+                  <div className="w-full bg-gray-300 h-3 rounded-full mt-2">
+                    <div
+                      className="bg-green-500 h-3 rounded-full"
+                      style={{ width: `${rate}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* BACK */}
         <button
-          onClick={() => navigate("/professor/sessions")}
-          className="mt-10 inline-block px-5 py-3 bg-gray-300 rounded-xl hover:bg-gray-400"
+          onClick={() => navigate("/professor/sessions/history")}
+          className="px-6 py-3 bg-gray-300 rounded-xl hover:bg-gray-400"
         >
           ⬅ Înapoi la Istoric
         </button>
-      </div>
-
-      {/* ANALYTICS */}
-      <div className="max-w-5xl mx-auto mt-10 bg-white shadow-xl p-8 rounded-2xl border border-gray-200">
-        <h2 className="text-2xl font-bold mb-4">Analytics pe întrebări</h2>
-
-        <div className="space-y-4">
-          {analytics.map((q) => {
-            const rate =
-              q.total_answers > 0
-                ? Math.round((q.correct_answers / q.total_answers) * 100)
-                : 0;
-
-            return (
-              <div key={q.question_id} className="p-4 bg-gray-50 rounded-xl border">
-                <p className="font-medium text-gray-800">
-                  {q.position + 1}. {q.title}
-                </p>
-
-                <p className="text-gray-600 mt-1">
-                  Corecte: {q.correct_answers}/{q.total_answers} ({rate}%)
-                </p>
-
-                <div className="w-full bg-gray-300 h-3 rounded-full mt-2 overflow-hidden">
-                  <div
-                    className="bg-green-500 h-3 rounded-full"
-                    style={{ width: `${rate}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
     </div>
   );
 }
 
-// SMALL COMPONENT
+/* ================= SMALL COMPONENT ================= */
+
 function StatCard({ title, value }: { title: string; value: number }) {
   return (
-    <div className="bg-white border rounded-xl p-6 text-center shadow">
+    <div className="bg-white rounded-2xl shadow p-6 border text-center">
       <p className="text-gray-600">{title}</p>
       <p className="text-3xl font-bold text-blue-600 mt-2">{value}</p>
     </div>

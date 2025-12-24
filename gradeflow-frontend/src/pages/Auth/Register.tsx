@@ -1,100 +1,140 @@
 import { useState } from "react";
-import api from "../../api/api";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import api from "../../api/api";
 
 export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("student");
-  const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+
   const navigate = useNavigate();
 
   const register = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setError("");
 
     try {
       await api.post("/auth/register", { email, password, role });
       setDone(true);
 
-      // Redirect după 1 sec
       setTimeout(() => {
         navigate("/login");
-      }, 1000);
-
+      }, 1200);
     } catch (err: any) {
-      console.error(err);
-
-      if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else {
-        setError("A apărut o eroare. Încearcă din nou.");
-      }
+      setError(
+        err.response?.data?.message ||
+          "A apărut o eroare. Încearcă din nou."
+      );
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0f0f11] text-white px-4 relative">
+    <div className="relative min-h-screen overflow-hidden bg-[#0b0b10] text-white flex items-center justify-center px-4">
 
-      {/* gradients */}
-      <div className="absolute inset-0 blur-[100px] opacity-40">
-        <div className="absolute top-[20%] left-[15%] w-[25rem] h-[25rem] bg-fuchsia-600 rounded-full"></div>
-        <div className="absolute bottom-[20%] right-[15%] w-[25rem] h-[25rem] bg-blue-600 rounded-full"></div>
-      </div>
+      {/* ===== MOVING PURPLE BLOBS ===== */}
+      <motion.div
+        className="absolute w-[700px] h-[700px] bg-purple-700 rounded-full blur-[180px] opacity-40"
+        animate={{ x: [0, 120, -80, 0], y: [0, -100, 80, 0] }}
+        transition={{ duration: 35, repeat: Infinity, ease: "linear" }}
+        style={{ top: "-20%", left: "-20%" }}
+      />
 
-      <form
+      <motion.div
+        className="absolute w-[600px] h-[600px] bg-purple-600 rounded-full blur-[180px] opacity-30"
+        animate={{ x: [0, -140, 100, 0], y: [0, 120, -80, 0] }}
+        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+        style={{ bottom: "-20%", right: "-20%" }}
+      />
+
+      <motion.div
+        className="absolute w-[500px] h-[500px] bg-purple-500 rounded-full blur-[160px] opacity-25"
+        animate={{ x: [0, 80, -80, 0], y: [0, -60, 60, 0] }}
+        transition={{ duration: 45, repeat: Infinity, ease: "linear" }}
+        style={{ top: "30%", left: "40%" }}
+      />
+
+      {/* ===== REGISTER CARD ===== */}
+      <motion.form
         onSubmit={register}
-        className="relative z-10 w-full max-w-sm p-8 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6 }}
+        className="relative z-10 w-full max-w-sm p-8 rounded-2xl
+                   bg-white/10 backdrop-blur-xl
+                   border border-white/20 shadow-2xl"
       >
-        <h2 className="text-3xl font-semibold text-center">Creează cont</h2>
+        <h2 className="text-3xl font-bold text-center mb-2">
+          Creează cont
+        </h2>
+
+        <p className="text-gray-300 text-center mb-6">
+          Alătură-te platformei GradeFlow
+        </p>
 
         {done && (
-          <p className="text-green-300 text-center mt-3">
-            Cont creat! Te redirecționăm către login...
+          <p className="mb-4 text-green-400 text-center font-medium">
+            Cont creat ✔ Redirecționare către login…
           </p>
         )}
 
         {error && (
-          <p className="text-red-400 text-center mt-3">{error}</p>
+          <p className="mb-4 text-red-400 text-center font-medium">
+            {error}
+          </p>
         )}
 
         <input
           type="email"
           placeholder="Email"
-          className="w-full mt-6 p-3 bg-white/10 border border-white/20 rounded-xl text-white outline-none"
+          required
+          className="w-full mb-4 p-3 rounded-xl bg-white/10 border border-white/20
+                     text-white placeholder-gray-400 outline-none
+                     focus:border-purple-500 transition"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          required
         />
 
         <input
           type="password"
           placeholder="Parolă"
-          className="w-full mt-4 p-3 bg-white/10 border border-white/20 rounded-xl text-white outline-none"
+          required
+          className="w-full mb-4 p-3 rounded-xl bg-white/10 border border-white/20
+                     text-white placeholder-gray-400 outline-none
+                     focus:border-purple-500 transition"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          required
         />
 
         <select
-          className="w-full mt-4 p-3 bg-white/10 border border-white/20 rounded-xl text-white"
           value={role}
           onChange={(e) => setRole(e.target.value)}
+          className="w-full mb-6 p-3 rounded-xl bg-white/10 border border-white/20
+                     text-white outline-none focus:border-purple-500"
         >
-          <option className="text-black" value="student">Student</option>
-          <option className="text-black" value="professor">Profesor</option>
+          <option className="text-black" value="student">
+            Student
+          </option>
+          <option className="text-black" value="professor">
+            Profesor
+          </option>
         </select>
 
         <button
+          type="submit"
           disabled={done}
-          className={`w-full mt-6 py-3 rounded-xl font-medium transition 
-            ${done ? "bg-gray-600" : "bg-blue-600 hover:bg-blue-700"}`}
+          className={`w-full py-3 rounded-xl font-semibold shadow-xl transition
+            ${
+              done
+                ? "bg-gray-600 cursor-not-allowed"
+                : "bg-purple-600 hover:bg-purple-700"
+            }`}
         >
           Creează cont
         </button>
-      </form>
+      </motion.form>
     </div>
   );
 }

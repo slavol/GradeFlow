@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
+import ProfessorNavbar from "../../components/ProfessorNavbar";
 
 interface SessionHistoryItem {
   id: number;
@@ -13,17 +15,15 @@ interface SessionHistoryItem {
 export default function ProfessorSessionsHistory() {
   const [sessions, setSessions] = useState<SessionHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  // ============================================================
+  // =========================
   // LOAD HISTORY
-  // ============================================================
+  // =========================
   const load = async () => {
     try {
       const res = await api.get("/professor/sessions/history");
 
-      console.log("HISTORY RESPONSE:", res.data);
-
-      // Acceptă orice format: array simplu sau { sessions: [...] }
       const data = Array.isArray(res.data)
         ? res.data
         : Array.isArray(res.data.sessions)
@@ -33,7 +33,7 @@ export default function ProfessorSessionsHistory() {
       setSessions(data);
     } catch (err) {
       console.error("HISTORY ERROR:", err);
-      setSessions([]); // evită crash .map
+      setSessions([]);
     } finally {
       setLoading(false);
     }
@@ -43,118 +43,121 @@ export default function ProfessorSessionsHistory() {
     load();
   }, []);
 
-  // ============================================================
+  // =========================
   // DELETE SESSION
-  // ============================================================
+  // =========================
   const deleteSession = async (sessionId: number) => {
     if (!confirm("Sigur vrei să ștergi această sesiune?")) return;
 
     try {
       await api.delete(`/professor/session/${sessionId}/delete`);
       setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Eroare la ștergerea sesiunii.");
     }
   };
 
-  // ============================================================
-  // UI STATES
-  // ============================================================
+  // =========================
+  // LOADING
+  // =========================
   if (loading) {
     return (
-      <div className="p-10 text-center text-gray-700">
-        Se încarcă istoricul sesiunilor...
+      <div className="min-h-screen bg-[#f7f8fc]">
+        <ProfessorNavbar />
+        <div className="p-10 text-center text-gray-600">
+          Se încarcă istoricul sesiunilor…
+        </div>
       </div>
     );
   }
 
-  if (!sessions || sessions.length === 0) {
+  // =========================
+  // EMPTY STATE
+  // =========================
+  if (sessions.length === 0) {
     return (
-      <div className="min-h-screen bg-[#f4f6fc] p-8">
-        <div className="max-w-4xl mx-auto bg-white p-8 shadow-xl rounded-2xl border border-gray-200 text-center">
+      <div className="min-h-screen bg-[#f7f8fc]">
+        <ProfessorNavbar />
+
+        <div className="max-w-4xl mx-auto px-4 py-16 text-center">
           <h1 className="text-2xl font-semibold text-gray-800 mb-2">
-            Nu există sesiuni susținute încă.
+            Nu există sesiuni susținute
           </h1>
           <p className="text-gray-600 mb-6">
-            Creează un quiz și pornește o sesiune live pentru a apărea aici.
+            După ce închizi o sesiune live, aceasta va apărea aici.
           </p>
 
-          <a
-            href="/professor/dashboard"
-            className="inline-block px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
+          <button
+            onClick={() => navigate("/professor/dashboard")}
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
           >
             ⬅ Înapoi la Dashboard
-          </a>
+          </button>
         </div>
       </div>
     );
   }
 
-  // ============================================================
+  // =========================
   // MAIN UI
-  // ============================================================
+  // =========================
   return (
-    <div className="min-h-screen bg-[#f4f6fc] p-8">
-      <div className="max-w-5xl mx-auto bg-white shadow-xl rounded-2xl p-8 border border-gray-200">
+    <div className="min-h-screen bg-[#f7f8fc]">
+      <ProfessorNavbar />
 
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Istoric sesiuni</h1>
-            <p className="text-gray-500 mt-1">
-              Vizionează toate sesiunile trecute și accesează rezultatele lor.
-            </p>
-          </div>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* HEADER */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Istoric sesiuni
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Toate sesiunile închise și rezultatele lor.
+          </p>
         </div>
 
-        <div className="overflow-hidden border rounded-xl bg-white">
+        {/* DESKTOP TABLE */}
+        <div className="hidden md:block bg-white rounded-2xl shadow border overflow-hidden">
           <table className="w-full border-collapse">
             <thead className="bg-gray-100 border-b">
-              <tr className="text-left text-gray-700">
-                <th className="p-3">Quiz</th>
-                <th className="p-3">Cod sesiune</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Creat la</th>
-                <th className="p-3 text-right">Acțiuni</th>
+              <tr className="text-gray-700 text-left">
+                <th className="p-4">Quiz</th>
+                <th className="p-4">Cod sesiune</th>
+                <th className="p-4">Status</th>
+                <th className="p-4">Creat la</th>
+                <th className="p-4 text-right">Acțiuni</th>
               </tr>
             </thead>
 
             <tbody>
               {sessions.map((s) => (
-                <tr key={s.id} className="border-b hover:bg-gray-50 transition">
-
-                  {/* QUIZ TITLE */}
-                  <td className="p-3">
+                <tr key={s.id} className="border-b hover:bg-gray-50">
+                  <td className="p-4">
                     {s.quiz_title || `Quiz #${s.quiz_id}`}
                   </td>
 
-                  {/* SESSION CODE */}
-                  <td className="p-3 font-mono">{s.session_code}</td>
-
-                  {/* STATUS */}
-                  <td className="p-3">
-                    {s.status === "active" ? (
-                      <span className="text-green-600 font-semibold">Activă</span>
-                    ) : (
-                      <span className="text-gray-600 font-semibold">Închisă</span>
-                    )}
+                  <td className="p-4 font-mono">
+                    {s.session_code}
                   </td>
 
-                  {/* CREATED AT */}
-                  <td className="p-3">
+                  <td className="p-4">
+                    <StatusBadge status={s.status} />
+                  </td>
+
+                  <td className="p-4">
                     {new Date(s.created_at).toLocaleString()}
                   </td>
 
-                  {/* ACTIONS */}
-                  <td className="p-3 text-right">
-                    <div className="flex gap-2 justify-end">
-
-                      <a
-                        href={`/professor/session/${s.id}/results`}
+                  <td className="p-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() =>
+                          navigate(`/professor/session/${s.id}/results`)
+                        }
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                       >
                         Rezultate
-                      </a>
+                      </button>
 
                       <button
                         onClick={() => deleteSession(s.id)}
@@ -162,23 +165,95 @@ export default function ProfessorSessionsHistory() {
                       >
                         Șterge
                       </button>
-
                     </div>
                   </td>
-
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        <a
-          href="/professor/dashboard"
-          className="mt-8 inline-block px-5 py-3 bg-gray-300 rounded-xl hover:bg-gray-400"
+        {/* MOBILE CARDS */}
+        <div className="md:hidden space-y-4">
+          {sessions.map((s) => (
+            <div
+              key={s.id}
+              className="bg-white rounded-xl shadow border p-4"
+            >
+              <h3 className="font-semibold text-lg">
+                {s.quiz_title || `Quiz #${s.quiz_id}`}
+              </h3>
+
+              <div className="text-sm text-gray-600 mt-2 space-y-1">
+                <p>
+                  <strong>Cod:</strong>{" "}
+                  <span className="font-mono">{s.session_code}</span>
+                </p>
+
+                <p>
+                  <strong>Status:</strong>{" "}
+                  <StatusBadge status={s.status} inline />
+                </p>
+
+                <p>
+                  <strong>Creat:</strong>{" "}
+                  {new Date(s.created_at).toLocaleString()}
+                </p>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-2">
+                <button
+                  onClick={() =>
+                    navigate(`/professor/session/${s.id}/results`)
+                  }
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                >
+                  Rezultate
+                </button>
+
+                <button
+                  onClick={() => deleteSession(s.id)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg"
+                >
+                  Șterge
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={() => navigate("/professor/dashboard")}
+          className="mt-10 px-6 py-3 bg-gray-300 rounded-xl hover:bg-gray-400"
         >
           ⬅ Înapoi la Dashboard
-        </a>
+        </button>
       </div>
     </div>
+  );
+}
+
+// =========================
+// STATUS BADGE
+// =========================
+function StatusBadge({
+  status,
+  inline = false,
+}: {
+  status: "active" | "closed";
+  inline?: boolean;
+}) {
+  const base =
+    "px-3 py-1 rounded-full text-sm font-semibold";
+
+  const cls =
+    status === "active"
+      ? "bg-green-100 text-green-700"
+      : "bg-gray-200 text-gray-700";
+
+  return (
+    <span className={`${base} ${cls} ${inline ? "" : ""}`}>
+      {status === "active" ? "Activă" : "Închisă"}
+    </span>
   );
 }

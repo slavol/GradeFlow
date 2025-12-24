@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
+import EditQuizNavbar from "../../components/EditQuizNavbar";
 
 import {
   PlusCircleIcon,
   TrashIcon,
   ClockIcon,
   QuestionMarkCircleIcon,
+  ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 
 interface Option {
@@ -26,11 +28,14 @@ export default function CreateQuiz() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [timeLimit, setTimeLimit] = useState(15);
-  const [creationType, setCreationType] = useState("manual");
-
+  const [creationType] = useState("manual");
   const [questions, setQuestions] = useState<Question[]>([]);
+
   const navigate = useNavigate();
 
+  // ==========================
+  // VALIDARE
+  // ==========================
   const validateQuiz = () => {
     if (!title.trim()) return "Titlul quiz-ului este obligatoriu";
     if (questions.length === 0)
@@ -40,18 +45,14 @@ export default function CreateQuiz() {
       const q = questions[i];
 
       if (!q.title.trim()) return `Întrebarea #${i + 1} nu are titlu`;
-
       if (q.options.length < 2)
         return `Întrebarea #${i + 1} trebuie să aibă minim 2 opțiuni`;
-
       if (q.options.some((o) => !o.text.trim()))
         return `Întrebarea #${i + 1} are opțiuni goale`;
 
       const correctCount = q.options.filter((o) => o.is_correct).length;
-
       if (correctCount === 0)
         return `Întrebarea #${i + 1} trebuie să aibă cel puțin un răspuns corect`;
-
       if (q.question_type === "single" && correctCount > 1)
         return `Întrebarea #${i + 1} permite un singur răspuns corect`;
     }
@@ -59,7 +60,9 @@ export default function CreateQuiz() {
     return null;
   };
 
-  // ➕ Add Question
+  // ==========================
+  // ACTIONS
+  // ==========================
   const addQuestion = () => {
     setQuestions([
       ...questions,
@@ -74,28 +77,24 @@ export default function CreateQuiz() {
     ]);
   };
 
-  // ➕ Add Option
   const addOption = (qIndex: number) => {
     const updated = [...questions];
     updated[qIndex].options.push({ text: "", is_correct: false });
     setQuestions(updated);
   };
 
-  // ❌ Delete Option
   const deleteOption = (qIndex: number, oIndex: number) => {
     const updated = [...questions];
     updated[qIndex].options.splice(oIndex, 1);
     setQuestions(updated);
   };
 
-  // ❌ Delete Question
   const deleteQuestion = (qIndex: number) => {
     const updated = [...questions];
     updated.splice(qIndex, 1);
     setQuestions(updated);
   };
 
-  // SUBMIT QUIZ
   const submitQuiz = async () => {
     const validationError = validateQuiz();
     if (validationError) return alert(validationError);
@@ -109,7 +108,6 @@ export default function CreateQuiz() {
       });
 
       const quizId = quizRes.data.quiz.id;
-
       await api.post(`/professor/quiz/${quizId}/questions`, { questions });
 
       alert("Quiz creat cu succes!");
@@ -121,188 +119,182 @@ export default function CreateQuiz() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 px-6 py-10">
-      <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-2xl p-8 border border-gray-200">
+    <div className="min-h-screen bg-[#f7f8fc]">
+      <EditQuizNavbar />
 
-        <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-          <QuestionMarkCircleIcon className="w-8 h-8 text-blue-600" />
-          Creează un Quiz
-        </h1>
+      {/* ================= CONTENT ================= */}
+      <div className="max-w-5xl mx-auto px-4 py-10">
+        <div className="bg-white rounded-2xl shadow-lg p-8 border">
 
-        <div className="mt-8 space-y-6">
+          <h1 className="text-3xl font-bold flex items-center gap-2 text-gray-800">
+            <QuestionMarkCircleIcon className="w-8 h-8 text-blue-600" />
+            Creează un Quiz
+          </h1>
 
-          {/* TITLU */}
-          <div>
-            <label className="block text-gray-700 font-medium">
-              Titlu Quiz
-            </label>
-            <input
-              className="w-full mt-1 p-3 border rounded-lg bg-gray-50"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
+          <div className="mt-8 space-y-6">
 
-          {/* DESCRIERE */}
-          <div>
-            <label className="block text-gray-700 font-medium">
-              Descriere
-            </label>
-            <textarea
-              className="w-full mt-1 p-3 border rounded-lg bg-gray-50"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-
-          {/* TIME LIMIT */}
-          <div>
-            <label className="block text-gray-700 font-medium flex items-center gap-1">
-              <ClockIcon className="w-5 h-5" />
-              Limită de timp
-            </label>
-
-            <div className="flex items-center gap-5">
+            {/* TITLU */}
+            <div>
+              <label className="font-medium">Titlu Quiz</label>
               <input
-                type="range"
-                min={1}
-                max={60}
-                value={timeLimit}
-                onChange={(e) => setTimeLimit(Number(e.target.value))}
-                className="w-full"
-              />
-
-              <input
-                type="number"
-                value={timeLimit}
-                min={1}
-                max={60}
-                onChange={(e) => setTimeLimit(Number(e.target.value))}
-                className="w-20 p-2 border rounded-lg bg-gray-50"
+                className="w-full mt-1 p-3 border rounded-lg bg-gray-50"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
               />
             </div>
-          </div>
 
-          {/* QUESTIONS */}
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-semibold text-gray-800">Întrebări</h2>
+            {/* DESCRIERE */}
+            <div>
+              <label className="font-medium">Descriere</label>
+              <textarea
+                className="w-full mt-1 p-3 border rounded-lg bg-gray-50"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
 
+            {/* TIME */}
+            <div>
+              <label className="font-medium flex items-center gap-2">
+                <ClockIcon className="w-5 h-5" />
+                Limită de timp (minute)
+              </label>
+
+              <div className="flex gap-4 items-center">
+                <input
+                  type="range"
+                  min={1}
+                  max={60}
+                  value={timeLimit}
+                  onChange={(e) => setTimeLimit(Number(e.target.value))}
+                  className="w-full"
+                />
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={timeLimit}
+                  onChange={(e) => setTimeLimit(Number(e.target.value))}
+                  className="w-20 p-2 border rounded-lg"
+                />
+              </div>
+            </div>
+
+            {/* QUESTIONS HEADER */}
+            <div className="flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
+              <h2 className="text-2xl font-semibold">Întrebări</h2>
+              <button
+                onClick={addQuestion}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <PlusCircleIcon className="w-5 h-5" />
+                Adaugă întrebare
+              </button>
+            </div>
+
+            {/* QUESTIONS */}
+            <div className="space-y-10">
+              {questions.map((q, qIndex) => (
+                <div
+                  key={qIndex}
+                  className="relative bg-gray-50 p-6 rounded-xl border"
+                >
+                  {/* DELETE QUESTION – FIXAT CORECT */}
+                  <button
+                    onClick={() => deleteQuestion(qIndex)}
+                    className="absolute -top-4 -right-4 bg-red-500 text-white p-2 rounded-full shadow hover:bg-red-600"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <input
+                      className="flex-1 p-3 border rounded-lg"
+                      placeholder="Titlu întrebare"
+                      value={q.title}
+                      onChange={(e) => {
+                        const updated = [...questions];
+                        updated[qIndex].title = e.target.value;
+                        setQuestions(updated);
+                      }}
+                    />
+
+                    <select
+                      className="p-3 border rounded-lg"
+                      value={q.question_type}
+                      onChange={(e) => {
+                        const updated = [...questions];
+                        updated[qIndex].question_type =
+                          e.target.value as "single" | "multiple";
+                        setQuestions(updated);
+                      }}
+                    >
+                      <option value="single">Un singur răspuns</option>
+                      <option value="multiple">Răspunsuri multiple</option>
+                    </select>
+                  </div>
+
+                  {/* OPTIONS */}
+                  <div className="mt-4 space-y-3">
+                    {q.options.map((opt, oIndex) => (
+                      <div key={oIndex} className="flex gap-3 items-center">
+                        <input
+                          type={q.question_type === "single" ? "radio" : "checkbox"}
+                          checked={opt.is_correct}
+                          onChange={() => {
+                            const updated = [...questions];
+                            if (q.question_type === "single") {
+                              updated[qIndex].options.forEach(
+                                (o) => (o.is_correct = false)
+                              );
+                            }
+                            updated[qIndex].options[oIndex].is_correct =
+                              !updated[qIndex].options[oIndex].is_correct;
+                            setQuestions(updated);
+                          }}
+                        />
+
+                        <input
+                          className="flex-1 p-3 border rounded-lg bg-white"
+                          placeholder="Text opțiune"
+                          value={opt.text}
+                          onChange={(e) => {
+                            const updated = [...questions];
+                            updated[qIndex].options[oIndex].text =
+                              e.target.value;
+                            setQuestions(updated);
+                          }}
+                        />
+
+                        <button
+                          onClick={() => deleteOption(qIndex, oIndex)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ))}
+
+                    <button
+                      onClick={() => addOption(qIndex)}
+                      className="mt-3 flex items-center gap-2 px-3 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg"
+                    >
+                      <PlusCircleIcon className="w-5 h-5" />
+                      Adaugă opțiune
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* SUBMIT */}
             <button
-              onClick={addQuestion}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              onClick={submitQuiz}
+              className="w-full py-3 mt-8 bg-green-600 text-white text-lg rounded-xl hover:bg-green-700"
             >
-              <PlusCircleIcon className="w-5 h-5" />
-              Adaugă întrebare
+              Salvează Quiz-ul
             </button>
           </div>
-
-          {/* QUESTION LIST */}
-          <div className="space-y-10 mt-4">
-            {questions.map((q, qIndex) => (
-              <div
-                key={qIndex}
-                className="p-6 bg-gray-50 rounded-xl border relative"
-              >
-                <button
-                  onClick={() => deleteQuestion(qIndex)}
-                  className="absolute top-2 right-2 text-red-500 hover:text-red-700"
-                >
-                  <TrashIcon className="w-6 h-6" />
-                </button>
-
-                {/* Q Title */}
-                <div className="flex gap-4">
-                  <input
-                    className="w-full p-3 border rounded-lg"
-                    placeholder="Titlu întrebare"
-                    value={q.title}
-                    onChange={(e) => {
-                      const updated = [...questions];
-                      updated[qIndex].title = e.target.value;
-                      setQuestions(updated);
-                    }}
-                  />
-
-                  <select
-                    className="p-3 border rounded-lg"
-                    value={q.question_type}
-                    onChange={(e) => {
-                      const updated = [...questions];
-                      updated[qIndex].question_type =
-                        e.target.value as "single" | "multiple";
-                      setQuestions(updated);
-                    }}
-                  >
-                    <option value="single">Un singur răspuns</option>
-                    <option value="multiple">Răspunsuri multiple</option>
-                  </select>
-                </div>
-
-                {/* OPTIONS */}
-                <div className="mt-4 space-y-3 ml-2">
-                  {q.options.map((opt, oIndex) => (
-                    <div key={oIndex} className="flex items-center gap-3">
-
-                      <input
-                        type={q.question_type === "single" ? "radio" : "checkbox"}
-                        name={`q-${qIndex}`}
-                        checked={opt.is_correct}
-                        onChange={() => {
-                          const updated = [...questions];
-
-                          if (q.question_type === "single") {
-                            updated[qIndex].options.forEach(
-                              (o) => (o.is_correct = false)
-                            );
-                          }
-
-                          updated[qIndex].options[oIndex].is_correct =
-                            !updated[qIndex].options[oIndex].is_correct;
-
-                          setQuestions(updated);
-                        }}
-                      />
-
-                      <input
-                        className="w-full p-3 border rounded-lg bg-white"
-                        placeholder="Text opțiune"
-                        value={opt.text}
-                        onChange={(e) => {
-                          const updated = [...questions];
-                          updated[qIndex].options[oIndex].text =
-                            e.target.value;
-                          setQuestions(updated);
-                        }}
-                      />
-
-                      <button
-                        onClick={() => deleteOption(qIndex, oIndex)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <TrashIcon className="w-5 h-5" />
-                      </button>
-                    </div>
-                  ))}
-
-                  <button
-                    onClick={() => addOption(qIndex)}
-                    className="mt-3 flex items-center gap-2 px-3 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg"
-                  >
-                    <PlusCircleIcon className="w-5 h-5" />
-                    Adaugă opțiune
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* SUBMIT */}
-          <button
-            onClick={submitQuiz}
-            className="w-full py-3 mt-6 bg-green-600 text-white text-lg rounded-xl hover:bg-green-700"
-          >
-            Salvează Quiz-ul
-          </button>
         </div>
       </div>
     </div>

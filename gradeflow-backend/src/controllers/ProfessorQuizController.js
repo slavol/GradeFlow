@@ -4,24 +4,44 @@ const SessionRepository = require("../repositories/SessionRepository");
 
 module.exports = {
   createQuiz: async (req, res) => {
-    try {
-      const professorId = req.user.id;
-      const { title, description, timeLimit, creation_type } = req.body;
+  try {
+    const professorId = req.user.id;
 
-      const quiz = await QuizRepository.create(
-        professorId,
-        title,
-        description || "",
-        timeLimit || 0,
-        creation_type
-      );
+    const {
+      title,
+      description,
+      time_limit,     // ⬅️ FOARTE IMPORTANT
+      creation_type
+    } = req.body;
 
-      res.json({ message: "Quiz created", quiz });
-    } catch (err) {
-      console.error("❌ createQuiz error:", err);
-      res.status(500).json({ message: "Server error" });
-    }
-  },
+    const parsedTimeLimit =
+      time_limit !== undefined && time_limit !== null
+        ? Number(time_limit)
+        : 0;
+
+    console.log("🧪 CREATE QUIZ INPUT:", {
+      professorId,
+      title,
+      description,
+      time_limit,
+      parsedTimeLimit,
+      creation_type
+    });
+
+    const quiz = await QuizRepository.create(
+      professorId,
+      title,
+      description || "",
+      parsedTimeLimit,
+      creation_type
+    );
+
+    res.json({ message: "Quiz created", quiz });
+  } catch (err) {
+    console.error("❌ createQuiz error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+},
 
   listQuizzes: async (req, res) => {
     try {

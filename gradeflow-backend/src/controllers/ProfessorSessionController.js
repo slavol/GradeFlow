@@ -131,4 +131,17 @@ module.exports = {
     }
   },
 
+  getLiveSessions: async (req, res) => {
+    try {
+      const professorId = req.user.id;
+
+      const sessions = await SessionRepository.getLiveSessions(professorId);
+
+      res.json(sessions);
+    } catch (err) {
+      console.error("GET LIVE SESSIONS ERROR:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  },
+
 };

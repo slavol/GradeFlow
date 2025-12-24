@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api/api";
+import ProfessorNavbar from "../../components/ProfessorNavbar";
 
 interface Session {
   id: number;
@@ -20,14 +21,16 @@ interface Student {
 }
 
 export default function ProfessorLiveSession() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [session, setSession] = useState<Session | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // LOAD SESSION
+  // =========================
+  // LOAD SINGLE SESSION
+  // =========================
   const loadSession = async () => {
     try {
       const res = await api.get(`/professor/session/${id}`);
@@ -36,10 +39,10 @@ export default function ProfessorLiveSession() {
       setStudents(res.data.students);
       setLoading(false);
 
+      // dacă sesiunea a fost închisă → redirect la rezultate
       if (res.data.session.status === "closed") {
         navigate(`/professor/session/${id}/results`);
       }
-
     } catch (err: any) {
       console.error("LOAD SESSION ERROR:", err);
 
@@ -54,15 +57,16 @@ export default function ProfessorLiveSession() {
     loadSession();
     const interval = setInterval(loadSession, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [id]);
 
+  // =========================
   // CLOSE SESSION
+  // =========================
   const closeSession = async () => {
     if (!confirm("Sigur vrei să închizi sesiunea?")) return;
 
     try {
       await api.post(`/professor/session/${id}/close`);
-      alert("Sesiunea a fost închisă!");
       navigate(`/professor/session/${id}/results`);
     } catch (err) {
       console.error(err);
@@ -70,51 +74,135 @@ export default function ProfessorLiveSession() {
     }
   };
 
-  if (loading || !session)
-    return <div className="p-10 text-center">Se încarcă sesiunea...</div>;
+  // =========================
+  // LOADING
+  // =========================
+  if (loading || !session) {
+    return (
+      <div className="min-h-screen bg-[#f7f8fc]">
+        <ProfessorNavbar />
+        <div className="p-10 text-center text-gray-600">
+          Se încarcă sesiunea…
+        </div>
+      </div>
+    );
+  }
 
+  // =========================
+  // UI
+  // =========================
   return (
-    <div className="min-h-screen p-8 bg-gray-100">
-      <div className="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow border">
+    <div className="min-h-screen bg-[#f7f8fc]">
+      <ProfessorNavbar />
 
-        <h1 className="text-3xl font-bold mb-4">Sesiune live</h1>
-
-        {/* SESSION INFO */}
-        <div className="bg-gray-100 p-4 rounded-xl mb-6">
-          <p>Cod sesiune: <strong>{session.session_code}</strong></p>
-          <p>
-            Status:{" "}
-            <strong className={session.status === "active" ? "text-green-600" : "text-red-600"}>
-              {session.status}
-            </strong>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* HEADER */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Sesiune live
+          </h1>
+          <p className="text-gray-600">
+            Monitorizează studenții conectați în timp real
           </p>
-          <p>Studenți conectați: <strong>{students.length}</strong></p>
         </div>
 
-        {/* STUDENT LIST */}
-        <h2 className="text-2xl font-semibold mb-2">Studenți conectați</h2>
+        {/* INFO */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <InfoCard label="Cod sesiune" value={session.session_code} mono />
+          <InfoCard
+            label="Status"
+            value={session.status === "active" ? "Activă" : "Închisă"}
+            status={session.status}
+          />
+          <InfoCard
+            label="Studenți conectați"
+            value={students.length}
+          />
+        </div>
 
-        <div className="bg-white p-4 border rounded-xl mb-6">
+        {/* STUDENTS */}
+        <div className="bg-white rounded-2xl shadow border p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">
+            Studenți conectați
+          </h2>
+
           {students.length === 0 ? (
-            <p className="text-gray-500">Niciun student conectat încă.</p>
+            <p className="text-gray-500">
+              Niciun student conectat încă.
+            </p>
           ) : (
-            students.map((s) => (
-              <p key={s.student_session_id} className="py-1 border-b last:border-b-0">
-                {s.email}
-              </p>
-            ))
+            <ul className="divide-y">
+              {students.map((s) => (
+                <li
+                  key={s.student_session_id}
+                  className="py-3 flex items-center justify-between"
+                >
+                  <span className="text-gray-800">{s.email}</span>
+
+                  <span
+                    className={`text-sm px-3 py-1 rounded-full ${
+                      s.completed
+                        ? "bg-green-100 text-green-700"
+                        : "bg-yellow-100 text-yellow-700"
+                    }`}
+                  >
+                    {s.completed ? "Finalizat" : "În desfășurare"}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 
-        {/* CLOSE SESSION BUTTON */}
-        <button
-          onClick={closeSession}
-          className="px-5 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700"
-        >
-          ⛔ Închide sesiunea
-        </button>
+        {/* ACTIONS */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <button
+            onClick={closeSession}
+            className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition"
+          >
+            ⛔ Închide sesiunea
+          </button>
 
+          <button
+            onClick={() => navigate("/professor/dashboard")}
+            className="flex-1 px-6 py-3 bg-gray-200 rounded-xl hover:bg-gray-300 transition"
+          >
+            ⬅ Înapoi la dashboard
+          </button>
+        </div>
       </div>
+    </div>
+  );
+}
+
+// =========================
+// INFO CARD
+// =========================
+function InfoCard({
+  label,
+  value,
+  status,
+  mono,
+}: {
+  label: string;
+  value: any;
+  status?: "active" | "closed";
+  mono?: boolean;
+}) {
+  return (
+    <div className="bg-white rounded-2xl shadow border p-5">
+      <p className="text-gray-600 text-sm">{label}</p>
+      <p
+        className={`mt-1 text-2xl font-bold ${
+          status === "active"
+            ? "text-green-600"
+            : status === "closed"
+            ? "text-red-600"
+            : "text-blue-600"
+        } ${mono ? "font-mono" : ""}`}
+      >
+        {value}
+      </p>
     </div>
   );
 }

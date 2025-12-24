@@ -61,27 +61,27 @@ module.exports = {
 
       // 2. TIME LIMIT din QUIZ
       const quiz = await QuizRepository.findById(session.quiz_id);
-      const timeLimitMinutes = quiz?.time_limit || 0;
+      const timeLimitMinutes = await StudentSessionRepo.getQuizTimeLimit(sessionId);
 
-      let time_left = null;
+let time_left = null;
 
-      if (timeLimitMinutes > 0) {
-        const started = new Date(studentSession.started_at);
-        const now = new Date();
+if (timeLimitMinutes > 0) {
+  const started = new Date(studentSession.started_at);
+  const now = new Date();
 
-        const elapsedSec = Math.floor((now - started) / 1000);
-        const totalSec = timeLimitMinutes * 60;
+  const elapsedSec = Math.floor((now - started) / 1000);
+  const totalSec = timeLimitMinutes * 60;
 
-        time_left = Math.max(totalSec - elapsedSec, 0);
+  time_left = Math.max(totalSec - elapsedSec, 0);
 
-        if (time_left === 0) {
-          await StudentSessionRepo.markCompleted(studentSession.id);
-          return res.json({
-            finished: true,
-            score: studentSession.score,
-          });
-        }
-      }
+  if (time_left === 0) {
+    await StudentSessionRepo.markCompleted(studentSession.id);
+    return res.json({
+      finished: true,
+      score: studentSession.score,
+    });
+  }
+}
 
       // Student a terminat deja
       if (studentSession.completed) {
