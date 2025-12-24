@@ -67,4 +67,11 @@ router.get(
   ProfessorSessionController.getLiveSessions
 );
 
+router.post(
+  "/session/:id/next",
+  auth,
+  requireRole("professor"),
+  ProfessorSessionController.nextQuestion
+);
+
 module.exports = router;

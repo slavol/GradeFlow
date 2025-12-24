@@ -14,7 +14,6 @@ interface Question {
   title: string;
   question_type: "single" | "multiple";
   options: Option[];
-  position?: number;
 }
 
 interface Quiz {
@@ -27,6 +26,8 @@ interface Quiz {
   questions: Question[];
 }
 
+type SessionMode = "LIVE" | "ALL";
+
 export default function ViewQuiz() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -34,6 +35,9 @@ export default function ViewQuiz() {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<number | null>(null);
+
+  // 🔥 NOU
+  const [mode, setMode] = useState<SessionMode>("LIVE");
 
   // =========================
   // LOAD QUIZ
@@ -63,11 +67,18 @@ export default function ViewQuiz() {
     alert("Cod copiat!");
   };
 
+  // =========================
+  // START SESSION (🔥 FIX)
+  // =========================
   const startSession = async () => {
     try {
-      const res = await api.post(`/professor/quiz/${id}/start`);
+      const res = await api.post(`/professor/quiz/${id}/start`, {
+        mode, // 🔥 CRUCIAL
+      });
+
       navigate(`/professor/session/${res.data.session.id}`);
-    } catch {
+    } catch (err) {
+      console.error(err);
       alert("Eroare la pornirea sesiunii");
     }
   };
@@ -99,13 +110,13 @@ export default function ViewQuiz() {
       <ProfessorNavbar />
 
       <div className="max-w-5xl mx-auto px-4 py-8">
+
         {/* HEADER */}
         <div className="bg-white rounded-2xl shadow border p-6 mb-8">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+          <div className="flex flex-col md:flex-row justify-between gap-6">
+
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {quiz.title}
-              </h1>
+              <h1 className="text-3xl font-bold">{quiz.title}</h1>
               <p className="text-gray-600 mt-1">
                 {quiz.description || "Fără descriere"}
               </p>
@@ -119,7 +130,7 @@ export default function ViewQuiz() {
                 </span>
                 <button
                   onClick={copyJoinCode}
-                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg"
                 >
                   📋
                 </button>
@@ -127,14 +138,42 @@ export default function ViewQuiz() {
             </div>
           </div>
 
-          {/* INFO CARDS */}
+          {/* INFO */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
             <InfoCard label="⏳ Timp" value={`${quiz.time_limit} min`} />
-            <InfoCard
-              label="❓ Întrebări"
-              value={quiz.questions.length}
-            />
+            <InfoCard label="❓ Întrebări" value={quiz.questions.length} />
             <InfoCard label="🧠 Tip" value={quiz.creation_type} />
+          </div>
+
+          {/* 🔥 SESSION MODE */}
+          <div className="mt-6">
+            <p className="text-sm text-gray-500 mb-2">
+              Mod de desfășurare sesiune
+            </p>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => setMode("LIVE")}
+                className={`px-5 py-2 rounded-xl border transition ${
+                  mode === "LIVE"
+                    ? "bg-green-600 text-white border-green-600"
+                    : "bg-white"
+                }`}
+              >
+                LIVE (una câte una)
+              </button>
+
+              <button
+                onClick={() => setMode("ALL")}
+                className={`px-5 py-2 rounded-xl border transition ${
+                  mode === "ALL"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white"
+                }`}
+              >
+                ALL (toate odată)
+              </button>
+            </div>
           </div>
         </div>
 
@@ -147,30 +186,16 @@ export default function ViewQuiz() {
               const open = expanded === index;
 
               return (
-                <div
-                  key={q.id}
-                  className="border rounded-xl p-5 bg-gray-50"
-                >
+                <div key={q.id} className="border rounded-xl p-5 bg-gray-50">
                   <div
-                    className="flex justify-between items-center cursor-pointer"
+                    className="flex justify-between cursor-pointer"
                     onClick={() => toggleExpand(index)}
                   >
-                    <h3 className="font-medium text-lg">
+                    <h3 className="font-medium">
                       {index + 1}. {q.title}
                     </h3>
-                    <span className="text-xl">
-                      {open ? "▲" : "▼"}
-                    </span>
+                    <span>{open ? "▲" : "▼"}</span>
                   </div>
-
-                  <p className="text-gray-500 mt-1">
-                    Tip:{" "}
-                    <strong>
-                      {q.question_type === "single"
-                        ? "Un singur răspuns"
-                        : "Răspunsuri multiple"}
-                    </strong>
-                  </p>
 
                   {open && (
                     <div className="mt-4 space-y-2">
@@ -200,19 +225,19 @@ export default function ViewQuiz() {
             onClick={startSession}
             className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700"
           >
-            ▶ Pornește sesiunea live
+            ▶ Pornește sesiunea ({mode})
           </button>
 
           <button
             onClick={() => navigate(`/professor/edit-quiz/${quiz.id}`)}
-            className="flex-1 px-6 py-3 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600"
+            className="flex-1 px-6 py-3 bg-yellow-500 text-white rounded-xl"
           >
             ✏️ Editează quiz
           </button>
 
           <button
             onClick={() => navigate("/professor/dashboard")}
-            className="flex-1 px-6 py-3 bg-gray-300 rounded-xl hover:bg-gray-400"
+            className="flex-1 px-6 py-3 bg-gray-300 rounded-xl"
           >
             ⬅ Dashboard
           </button>
@@ -222,9 +247,6 @@ export default function ViewQuiz() {
   );
 }
 
-// =========================
-// INFO CARD
-// =========================
 function InfoCard({ label, value }: { label: string; value: any }) {
   return (
     <div className="bg-white border rounded-xl p-4 text-center shadow-sm">

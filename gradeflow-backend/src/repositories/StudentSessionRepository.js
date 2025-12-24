@@ -128,6 +128,16 @@ class StudentSessionRepository {
   // ======================================================
   // INCREMENT SCORE
   // ======================================================
+  static async incrementScoreBy(studentSessionId, amount) {
+  return prisma.student_sessions.update({
+    where: { id: Number(studentSessionId) },
+    data: {
+      score: { increment: Number(amount) || 0 },
+    },
+  });
+}
+
+
   static async incrementScore(studentSessionId) {
     await prisma.student_sessions.update({
       where: { id: Number(studentSessionId) },
@@ -204,29 +214,29 @@ class StudentSessionRepository {
   // LEADERBOARD
   // ======================================================
   static async getLeaderboard(sessionId) {
-  const rows = await prisma.student_sessions.findMany({
-    where: {
-      session_id: Number(sessionId),
-      completed: true,
-    },
-    include: {
-      users: {
-        select: { email: true },
+    const rows = await prisma.student_sessions.findMany({
+      where: {
+        session_id: Number(sessionId),
+        completed: true,
       },
-    },
-    orderBy: [
-      { score: "desc" },
-      { finished_at: "asc" },
-    ],
-  });
+      include: {
+        users: {
+          select: { email: true },
+        },
+      },
+      orderBy: [
+        { score: "desc" },
+        { finished_at: "asc" },
+      ],
+    });
 
-  return rows.map(r => ({
-    student_session_id: r.id,
-    email: r.users?.email ?? null,
-    score: r.score,
-    finished_at: r.finished_at,
-  }));
-}
+    return rows.map(r => ({
+      student_session_id: r.id,
+      email: r.users?.email ?? null,
+      score: r.score,
+      finished_at: r.finished_at,
+    }));
+  }
 
   // ======================================================
   // OPTION TEXTS
@@ -268,6 +278,32 @@ class StudentSessionRepository {
       },
     });
   }
+
+  async advanceAllStudents(sessionId) {
+    return prisma.student_sessions.updateMany({
+      where: {
+        session_id: Number(sessionId),
+        completed: false,
+      },
+      data: {
+        current_index: {
+          increment: 1,
+        },
+      },
+    });
+  }
+
+  static async finishSessionWithScore(studentSessionId, score) {
+  return prisma.student_sessions.update({
+    where: { id: Number(studentSessionId) },
+    data: {
+      score,
+      completed: true,
+      finished_at: new Date(),
+    },
+  });
 }
+}
+
 
 module.exports = StudentSessionRepository;

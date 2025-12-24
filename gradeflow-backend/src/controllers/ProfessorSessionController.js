@@ -11,23 +11,30 @@ module.exports = {
   // START SESSION
   // =====================================================
   startSession: async (req, res) => {
-    try {
-      const quizId = req.params.id;
-      const professorId = req.user.id;
+  try {
+    const quizId = req.params.id;
+    const professorId = req.user.id;
 
-      const session = await SessionRepository.createSession(quizId, professorId);
+    // ✅ SAFE DEFAULT
+    const { mode = "LIVE" } = req.body || {};
 
-      return res.json({
-        success: true,
-        message: "Session started",
-        session
-      });
+    const session = await SessionRepository.createSession(
+      quizId,
+      professorId,
+      mode
+    );
 
-    } catch (err) {
-      console.error("START SESSION ERROR:", err);
-      return res.status(500).json({ error: "Server error" });
-    }
-  },
+    return res.json({
+      success: true,
+      message: "Session started",
+      session,
+    });
+
+  } catch (err) {
+    console.error("START SESSION ERROR:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+},
 
   // =====================================================
   // GET LIVE SESSION INFO (for professor panel)
@@ -143,5 +150,36 @@ module.exports = {
       res.status(500).json({ error: "Server error" });
     }
   },
+
+  // =====================================================
+// NEXT QUESTION (LIVE MODE)
+// =====================================================
+async nextQuestion(req, res) {
+  try {
+    const sessionId = req.params.id;
+    const professorId = req.user.id;
+
+    const session = await SessionRepository.findById(sessionId);
+
+    if (!session || session.professor_id !== professorId) {
+      return res.status(403).json({ error: "Acces interzis." });
+    }
+
+    if (session.mode !== "LIVE") {
+      return res.status(400).json({ error: "Next question permis doar în LIVE." });
+    }
+
+    await StudentSessionRepo.advanceAllStudents(sessionId);
+
+    return res.json({
+      success: true,
+      message: "Următoarea întrebare trimisă",
+    });
+
+  } catch (err) {
+    console.error("NEXT QUESTION ERROR:", err);
+    return res.status(500).json({ error: "Server error." });
+  }
+},
 
 };

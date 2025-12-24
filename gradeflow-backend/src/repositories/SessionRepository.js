@@ -10,18 +10,19 @@ class SessionRepository {
   // =============================
   // CREATE LIVE SESSION
   // =============================
-  static async createSession(quizId, professorId) {
-    const sessionCode = generateSessionCode();
+  static async createSession(quizId, professorId, mode = "LIVE") {
+  const sessionCode = generateSessionCode(); // ce folosești tu
 
-    return prisma.quiz_sessions.create({
-      data: {
-        quiz_id: Number(quizId),
-        professor_id: Number(professorId),
-        session_code: sessionCode,
-        status: "active",
-      },
-    });
-  }
+  return prisma.quiz_sessions.create({
+    data: {
+      quiz_id: Number(quizId),
+      professor_id: Number(professorId),
+      session_code: sessionCode,
+      status: "active",
+      mode, // 👈 LIVE | ALL
+    },
+  });
+}
 
   // =============================
   // GET SESSION BY ID

@@ -1,15 +1,27 @@
 const StudentSessionRepo = require("../repositories/StudentSessionRepository");
-const QuizRepository = require("../repositories/QuizRepository");
+
+/**
+ * Helper: calculează timpul rămas (secunde)
+ */
+function computeTimeLeft(session, studentSession) {
+  if (!session?.quizzes?.time_limit || session.quizzes.time_limit <= 0) {
+    return null;
+  }
+
+  const startedAt = studentSession.started_at;
+  if (!startedAt) return null;
+
+  const totalSeconds = session.quizzes.time_limit * 60;
+  const elapsedSeconds = Math.floor(
+    (Date.now() - new Date(startedAt).getTime()) / 1000
+  );
+
+  return Math.max(totalSeconds - elapsedSeconds, 0);
+}
 
 module.exports = {
   // =====================================================
-  // STUDENT JOIN SESSION
-  // =====================================================
-  // =====================================================
-  // LOAD SESSION DATA (current question + timer)
-  // =====================================================
-  // =====================================================
-  // STUDENT JOIN SESSION
+  // JOIN SESSION
   // =====================================================
   async joinSession(req, res) {
     try {
@@ -20,139 +32,136 @@ module.exports = {
         return res.status(400).json({ error: "Codul sesiunii este necesar." });
       }
 
-      // repo verifică dacă sesiunea există și dacă studentul poate intra
       const result = await StudentSessionRepo.joinSession(session_code, studentId);
-
       if (!result) {
-        return res.status(404).json({ error: "Sesiune invalidă sau deja închisă." });
+        return res.status(404).json({ error: "Sesiune invalidă sau închisă." });
       }
-
-      const { session, studentSession } = result;
 
       return res.json({
         success: true,
-        session_id: session.id,
-        student_session_id: studentSession.id,
+        session_id: result.session.id,
+        student_session_id: result.studentSession.id,
       });
-
     } catch (err) {
       console.error("JOIN SESSION ERROR:", err);
-      return res.status(500).json({ error: "Eroare server." });
-    }
-  },
-
-
-  async getSessionData(req, res) {
-    try {
-      const sessionId = req.params.id;
-      const studentId = req.user.id;
-
-      // 1. session + student_session
-      let data = await StudentSessionRepo.getStudentSession(sessionId, studentId);
-      if (!data || !data.session) {
-        return res.status(404).json({ error: "Sesiunea nu există." });
-      }
-
-      const { session, studentSession } = data;
-
-      if (!studentSession) {
-        return res.status(403).json({ error: "Nu ești parte din această sesiune." });
-      }
-
-      // 2. TIME LIMIT din QUIZ
-      const quiz = await QuizRepository.findById(session.quiz_id);
-      const timeLimitMinutes = await StudentSessionRepo.getQuizTimeLimit(sessionId);
-
-let time_left = null;
-
-if (timeLimitMinutes > 0) {
-  const started = new Date(studentSession.started_at);
-  const now = new Date();
-
-  const elapsedSec = Math.floor((now - started) / 1000);
-  const totalSec = timeLimitMinutes * 60;
-
-  time_left = Math.max(totalSec - elapsedSec, 0);
-
-  if (time_left === 0) {
-    await StudentSessionRepo.markCompleted(studentSession.id);
-    return res.json({
-      finished: true,
-      score: studentSession.score,
-    });
-  }
-}
-
-      // Student a terminat deja
-      if (studentSession.completed) {
-        return res.json({
-          finished: true,
-          score: studentSession.score,
-          time_left,
-        });
-      }
-
-      // 3. Întrebările
-      const questions = await StudentSessionRepo.getQuizQuestions(sessionId);
-
-      if (questions.length === 0) {
-        return res.json({ error: "Quiz-ul nu are întrebări." });
-      }
-
-      const currentIndex = studentSession.current_index;
-
-      if (currentIndex >= questions.length) {
-        await StudentSessionRepo.markCompleted(studentSession.id);
-        return res.json({
-          finished: true,
-          score: studentSession.score,
-        });
-      }
-
-      let question = questions[currentIndex];
-
-      question = {
-        id: question.id,
-        text: question.title,
-        question_type: question.question_type
-      };
-
-      const options = await StudentSessionRepo.getQuestionOptions(question.id);
-
-      // ————————————————————————————————
-      // FIX IMPORTANT — verificare răspuns existent
-      // ————————————————————————————————
-      const alreadyAnswered = await StudentSessionRepo.hasAnswered(
-        studentSession.id,
-        question.id
-      );
-
-      let selected_option_ids = [];
-
-      if (alreadyAnswered) {
-        selected_option_ids = await StudentSessionRepo.getSelectedOptionIds(
-          studentSession.id,
-          question.id
-        );
-      }
-
-      return res.json({
-        session,
-        studentSession,
-        question,
-        options,
-        selected_option_ids,
-        time_left,
-      });
-
-    } catch (err) {
-      console.error("GET SESSION DATA ERROR:", err);
-      return res.status(500).json({ error: "Server error." });
+      res.status(500).json({ error: "Server error." });
     }
   },
 
   // =====================================================
-  // SUBMIT ANSWER
+  // GET SESSION DATA (LIVE / ALL)
+  // =====================================================
+  async getSessionData(req, res) {
+  try {
+    const sessionId = req.params.id;
+    const studentId = req.user.id;
+
+    const data = await StudentSessionRepo.getStudentSession(sessionId, studentId);
+    if (!data || !data.session || !data.studentSession) {
+      return res.status(404).json({ error: "Sesiunea nu există." });
+    }
+
+    const { session, studentSession } = data;
+
+    // ===========================
+    // TIMER (secunde rămase)
+    // ===========================
+    let time_left = null;
+
+    const timeLimitMinutes = await StudentSessionRepo.getQuizTimeLimit(sessionId);
+
+    if (timeLimitMinutes > 0 && studentSession.started_at) {
+      const endTime =
+        new Date(studentSession.started_at).getTime() +
+        timeLimitMinutes * 60 * 1000;
+
+      time_left = Math.max(
+        0,
+        Math.floor((endTime - Date.now()) / 1000)
+      );
+    }
+
+    // dacă timpul a expirat
+    if (time_left === 0 && !studentSession.completed) {
+      await StudentSessionRepo.markCompleted(studentSession.id);
+      return res.json({ finished: true });
+    }
+
+    // dacă studentul a terminat
+    if (studentSession.completed) {
+      return res.json({
+        finished: true,
+        score: studentSession.score,
+      });
+    }
+
+    const questions = await StudentSessionRepo.getQuizQuestions(sessionId);
+    if (!questions.length) {
+      return res.json({ error: "Quiz fără întrebări." });
+    }
+
+    // ===========================
+    // 🔴 LIVE MODE
+    // ===========================
+    if (session.mode === "LIVE") {
+      const index = studentSession.current_index;
+
+      if (index >= questions.length) {
+        await StudentSessionRepo.markCompleted(studentSession.id);
+        return res.json({ finished: true });
+      }
+
+      const q = questions[index];
+      const options = await StudentSessionRepo.getQuestionOptions(q.id);
+
+      return res.json({
+        mode: "LIVE",
+        session,
+        question: {
+          id: q.id,
+          text: q.title,
+          question_type: q.question_type,
+          options,
+        },
+        index,
+        total: questions.length,
+        time_left,
+      });
+    }
+
+    // ===========================
+    // 🔵 ALL MODE
+    // ===========================
+    if (session.mode === "ALL") {
+      const formatted = await Promise.all(
+        questions.map(async (q) => {
+          const options = await StudentSessionRepo.getQuestionOptions(q.id);
+          return {
+            id: q.id,
+            text: q.title,
+            question_type: q.question_type,
+            options,
+          };
+        })
+      );
+
+      return res.json({
+        mode: "ALL",
+        session,
+        questions: formatted,
+        total: questions.length,
+        time_left,
+      });
+    }
+
+  } catch (err) {
+    console.error("GET SESSION DATA ERROR:", err);
+    res.status(500).json({ error: "Server error." });
+  }
+},
+
+  // =====================================================
+  // SUBMIT ANSWER (LIVE)
   // =====================================================
   async submitAnswer(req, res) {
     try {
@@ -160,154 +169,146 @@ if (timeLimitMinutes > 0) {
       const studentId = req.user.id;
       const { question_id, selected_option_ids } = req.body;
 
-      if (!Array.isArray(selected_option_ids) || selected_option_ids.length === 0) {
-        return res.status(400).json({ error: "Trebuie să selectezi cel puțin o opțiune." });
+      if (!Array.isArray(selected_option_ids) || !selected_option_ids.length) {
+        return res.status(400).json({ error: "Selectează cel puțin o opțiune." });
       }
 
       const data = await StudentSessionRepo.getStudentSession(sessionId, studentId);
-      const studentSession = data?.studentSession;
-
-      if (!studentSession) {
-        return res.status(403).json({ error: "Nu ești parte din această sesiune." });
+      if (!data) {
+        return res.status(403).json({ error: "Acces interzis." });
       }
 
-      // TIMP EXPIRAT? Nu permitem răspuns.
-      const quiz = await QuizRepository.findById(data.session.quiz_id, data.session.professor_id);
-      const limit = quiz?.time_limit || 0;
-
-      if (limit > 0) {
-        const started = new Date(studentSession.started_at);
-        const now = new Date();
-        const elapsed = Math.floor((now - started) / 1000);
-
-        if (elapsed >= limit * 60) {
-          await StudentSessionRepo.markCompleted(studentSession.id);
-          return res.status(403).json({ error: "Timpul a expirat." });
-        }
-      }
-
-      // Răspuns corect?
       const correctIds = await StudentSessionRepo.getCorrectOptionIds(question_id);
 
-      const sortedCorrect = [...correctIds].sort((a, b) => a - b);
-      const sortedGiven = [...selected_option_ids].sort((a, b) => a - b);
-
-      const isCorrect = JSON.stringify(sortedCorrect) === JSON.stringify(sortedGiven);
+      const isCorrect =
+        JSON.stringify([...correctIds].sort()) ===
+        JSON.stringify([...selected_option_ids].sort());
 
       await StudentSessionRepo.saveAnswer(
-        studentSession.id,
+        data.studentSession.id,
         question_id,
         selected_option_ids,
         isCorrect
       );
 
       if (isCorrect) {
-        await StudentSessionRepo.incrementScore(studentSession.id);
+        await StudentSessionRepo.incrementScore(data.studentSession.id);
       }
 
-      await StudentSessionRepo.advanceQuestion(studentSession.id);
+      await StudentSessionRepo.advanceQuestion(data.studentSession.id);
 
-      return res.json({
-        success: true,
-        correct: isCorrect,
-      });
+      res.json({ success: true });
     } catch (err) {
       console.error("SUBMIT ANSWER ERROR:", err);
-      return res.status(500).json({ error: "Server error." });
+      res.status(500).json({ error: "Server error." });
     }
   },
 
   // =====================================================
-  // GET SESSION RESULTS FOR STUDENT
+  // SUBMIT ALL (ALL MODE)
+  // =====================================================
+  async submitAllAnswers(req, res) {
+    try {
+      const sessionId = req.params.id;
+      const studentId = req.user.id;
+      const { answers } = req.body;
+
+      if (!Array.isArray(answers) || !answers.length) {
+        return res.status(400).json({ error: "Nu există răspunsuri." });
+      }
+
+      const data = await StudentSessionRepo.getStudentSession(sessionId, studentId);
+      if (!data) {
+        return res.status(403).json({ error: "Acces interzis." });
+      }
+
+      for (const ans of answers) {
+        const correctIds = await StudentSessionRepo.getCorrectOptionIds(ans.question_id);
+        const isCorrect =
+          JSON.stringify([...correctIds].sort()) ===
+          JSON.stringify([...ans.selected_option_ids].sort());
+
+        await StudentSessionRepo.saveAnswer(
+          data.studentSession.id,
+          ans.question_id,
+          ans.selected_option_ids,
+          isCorrect
+        );
+
+        if (isCorrect) {
+          await StudentSessionRepo.incrementScore(data.studentSession.id);
+        }
+      }
+
+      await StudentSessionRepo.markCompleted(data.studentSession.id);
+
+      res.json({ success: true, finished: true });
+    } catch (err) {
+      console.error("SUBMIT ALL ERROR:", err);
+      res.status(500).json({ error: "Server error." });
+    }
+  },
+
+  // =====================================================
+  // RESULTS
   // =====================================================
   async getResults(req, res) {
     try {
       const sessionId = req.params.id;
       const studentId = req.user.id;
 
-      // 1. student session
       const data = await StudentSessionRepo.getStudentSession(sessionId, studentId);
-      const session = data?.session;
-      const studentSession = data?.studentSession;
-
-      if (!session || !studentSession) {
-        return res.status(404).json({ error: "Sesiunea nu există." });
+      if (!data || !data.studentSession.completed) {
+        return res.status(403).json({ error: "Quiz neterminat." });
       }
 
-      // student must be finished
-      if (!studentSession.completed) {
-        return res.status(403).json({ error: "Quiz-ul nu este încă terminat." });
-      }
-
-      // 2. total questions
       const questions = await StudentSessionRepo.getQuizQuestions(sessionId);
-      const totalQuestions = questions.length;
+      const studentAnswers = await StudentSessionRepo.getStudentAnswers(
+        data.studentSession.id
+      );
 
-      // 3. student answers
-      const answers = await StudentSessionRepo.getStudentAnswers(studentSession.id);
-
-      // match each question + correct option + student's selection
-      const detailedResults = await Promise.all(
+      const detailed = await Promise.all(
         questions.map(async (q) => {
           const opts = await StudentSessionRepo.getQuestionOptions(q.id);
-
-          const correct = opts.filter(o => o.is_correct);
-          const answer = answers.find(a => a.question_id === q.id);
-
-          const selected = answer
-            ? await StudentSessionRepo.getOptionTexts(answer.selected_option_ids)
-            : [];
+          const correct = opts.filter((o) => o.is_correct);
+          const ans = studentAnswers.find((a) => a.question_id === q.id);
 
           return {
             question_id: q.id,
             question_text: q.title,
-
-            correct_answers: correct.map(o => ({
-              id: o.id,
-              text: o.text
-            })),
-
-            selected_answers: selected.map(o => ({
-              id: o.id,
-              text: o.text
-            })),
-
-            is_correct: answer?.is_correct || false
+            correct_answers: correct.map((o) => ({ id: o.id, text: o.text })),
+            selected_answers: ans
+              ? await StudentSessionRepo.getOptionTexts(ans.selected_option_ids)
+              : [],
+            is_correct: !!ans?.is_correct,
           };
         })
       );
 
-      // 4. leaderboard
       const leaderboard = await StudentSessionRepo.getLeaderboard(sessionId);
 
-      return res.json({
-        session,
-        score: studentSession.score,
-        total: totalQuestions,
-        answers: detailedResults,
-        leaderboard
+      res.json({
+        score: data.studentSession.score ?? 0,
+        total: questions.length,
+        answers: detailed,
+        leaderboard,
       });
-
     } catch (err) {
       console.error("GET RESULTS ERROR:", err);
-      return res.status(500).json({ error: "Server error." });
+      res.status(500).json({ error: "Server error." });
     }
   },
-  
+
+  // =====================================================
+  // HISTORY
+  // =====================================================
   async getHistory(req, res) {
-  try {
-    const studentId = req.user.id;
-
-    const history = await StudentSessionRepo.getStudentHistory(studentId);
-
-    return res.json({
-      success: true,
-      history
-    });
-
-  } catch (err) {
-    console.error("GET HISTORY ERROR:", err);
-    return res.status(500).json({ error: "Server error." });
-  }
-}
+    try {
+      const history = await StudentSessionRepo.getStudentHistory(req.user.id);
+      res.json({ history });
+    } catch (err) {
+      console.error("GET HISTORY ERROR:", err);
+      res.status(500).json({ error: "Server error." });
+    }
+  },
 };

@@ -48,5 +48,12 @@ router.get(
   StudentSessionController.getResults
 );
 
+router.post(
+  "/:id/answer/all",
+  auth,
+  requireRole("student"),
+  StudentSessionController.submitAllAnswers
+);
+
 
 module.exports = router;

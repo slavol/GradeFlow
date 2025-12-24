@@ -4,12 +4,16 @@ import api from "../../api/api";
 import StudentNavbar from "../../components/StudentNavbar";
 
 interface HistoryItem {
-  student_session_id: number;
-  session_id: number;
-  quiz_title: string;
+  id: number; // student_sessions.id
   score: number;
   completed: boolean;
   finished_at?: string;
+  quiz_sessions: {
+    id: number; // session_id
+    quizzes: {
+      title: string;
+    };
+  };
 }
 
 export default function StudentDashboard() {
@@ -53,27 +57,24 @@ export default function StudentDashboard() {
           </p>
         </div>
 
-        {/* JOIN QUIZ CARD */}
-        <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-200 text-center mb-12">
-          <h2 className="text-2xl font-bold text-gray-800 mb-3">
-            🚀 Alătură-te unui Quiz
-          </h2>
-
+        {/* JOIN QUIZ */}
+        <div className="bg-white rounded-3xl shadow-lg p-8 border text-center mb-12">
+          <h2 className="text-2xl font-bold mb-3">🚀 Alătură-te unui Quiz</h2>
           <p className="text-gray-600 mb-6">
             Introdu codul primit de la profesor pentru a începe.
           </p>
 
           <Link
             to="/student/join"
-            className="inline-block px-8 py-4 bg-blue-600 text-white text-lg rounded-xl shadow hover:bg-blue-700 transition font-semibold"
+            className="inline-block px-8 py-4 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition font-semibold"
           >
             Join Quiz
           </Link>
         </div>
 
         {/* HISTORY */}
-        <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        <div className="bg-white rounded-3xl shadow-lg p-8 border">
+          <h2 className="text-2xl font-bold mb-6">
             📘 Istoric rezultate
           </h2>
 
@@ -87,12 +88,12 @@ export default function StudentDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {history.map((h) => (
                 <div
-                  key={h.student_session_id}
+                  key={h.id} // ✅ CHEIE CORECTĂ
                   className="p-6 bg-gray-50 rounded-2xl border shadow-sm flex flex-col justify-between"
                 >
                   <div>
                     <h3 className="text-lg font-semibold text-gray-800">
-                      {h.quiz_title}
+                      {h.quiz_sessions.quizzes.title}
                     </h3>
 
                     <p className="text-sm text-gray-600 mt-2">
@@ -122,14 +123,18 @@ export default function StudentDashboard() {
                     )}
                   </div>
 
-                  <button
-                    onClick={() =>
-                      navigate(`/student/session/${h.session_id}/results`)
-                    }
-                    className="mt-5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-semibold"
-                  >
-                    Vezi rezultatele
-                  </button>
+                  {h.completed && (
+                    <button
+                      onClick={() =>
+                        navigate(
+                          `/student/session/${h.quiz_sessions.id}/results`
+                        )
+                      }
+                      className="mt-5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-semibold"
+                    >
+                      Vezi rezultatele
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
