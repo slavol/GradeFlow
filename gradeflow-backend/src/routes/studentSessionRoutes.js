@@ -4,6 +4,7 @@ const auth = require("../middleware/auth");
 const requireRole = require("../middleware/requireRole");
 
 const StudentSessionController = require("../controllers/StudentSessionController");
+const StudentAIController= require("../controllers/StudentAIController")
 
 // =====================================================
 // ORDER MATTERS! Routes with fixed path BEFORE dynamic :id
@@ -53,6 +54,13 @@ router.post(
   auth,
   requireRole("student"),
   StudentSessionController.submitAllAnswers
+);
+
+router.post(
+  "/:sessionId/explanation/:questionId",
+  auth,
+  requireRole("student"),
+  StudentAIController.explainWrongAnswer
 );
 
 

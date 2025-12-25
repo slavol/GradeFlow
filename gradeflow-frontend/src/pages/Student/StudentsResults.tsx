@@ -20,6 +20,10 @@ interface AnswerDetails {
   correct_answers: { id: number; text: string }[];
   selected_answers: { id: number; text: string }[];
   is_correct: boolean;
+
+  // ✅ pentru cache din DB (vine din GET results)
+  explanation_text?: string | null;
+  explanation_created_at?: string | null;
 }
 
 interface LeaderboardEntry {
@@ -34,6 +38,7 @@ type ExplainState = {
   loading: boolean;
   text: string | null;
   error: string | null;
+  createdAt?: string | null;
 };
 
 /* ================= COMPONENT ================= */
@@ -63,15 +68,30 @@ export default function StudentResults() {
         correct_answers: Array.isArray(a.correct_answers) ? a.correct_answers : [],
         selected_answers: Array.isArray(a.selected_answers) ? a.selected_answers : [],
         is_correct: Boolean(a.is_correct),
+
+        // ✅ cache fields (dacă backend-ul le trimite)
+        explanation_text: a.explanation_text ?? null,
+        explanation_created_at: a.explanation_created_at ?? null,
       }));
 
       setAnswers(normalizedAnswers);
       setLeaderboard(res.data.leaderboard || []);
 
-      // init state pentru explain (doar ca să ai toggle stabil)
+      // ✅ init state explain: dacă există explanation_text din DB, îl punem direct
       const init: Record<number, ExplainState> = {};
       for (const a of normalizedAnswers) {
-        init[a.question_id] = { open: false, loading: false, text: null, error: null };
+        const cachedText =
+          typeof a.explanation_text === "string" && a.explanation_text.trim().length > 0
+            ? a.explanation_text.trim()
+            : null;
+
+        init[a.question_id] = {
+          open: false,
+          loading: false,
+          text: cachedText,
+          error: null,
+          createdAt: a.explanation_created_at ?? null,
+        };
       }
       setExplain(init);
     } catch (err) {
@@ -91,10 +111,7 @@ export default function StudentResults() {
   /* ================= DERIVED ================= */
   const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
 
-  const wrongCount = useMemo(
-    () => answers.filter((a) => !a.is_correct).length,
-    [answers]
-  );
+  const wrongCount = useMemo(() => answers.filter((a) => !a.is_correct).length, [answers]);
 
   /* ================= AI EXPLAIN ================= */
   const toggleExplain = (questionId: number) => {
@@ -121,11 +138,15 @@ export default function StudentResults() {
     }));
 
     try {
-      // ✅ ruta ta: POST /ai/student/explain (montată pe /ai)
-      const res = await api.post("/ai/student/explain-question", {
-        sessionId: Number(sessionId),
-        questionId: Number(questionId),
-      });
+      // ✅ ruta ta actuală: POST /student/session/:sessionId/explanation/:questionId
+      // trimitem și body ca să fie compatibil și dacă în controller citești req.body
+      const res = await api.post(
+        `/student/session/${sessionId}/explanation/${questionId}`,
+        {
+          sessionId: Number(sessionId),
+          questionId: Number(questionId),
+        }
+      );
 
       const text = String(res.data?.explanation ?? "").trim();
       if (!text) throw new Error("AI nu a returnat o explicație.");
@@ -138,8 +159,22 @@ export default function StudentResults() {
           loading: false,
           text,
           error: null,
+          createdAt: res.data?.explanation_created_at ?? prev[questionId]?.createdAt ?? null,
         },
       }));
+
+      // ✅ opțional: actualizăm și answers local ca să rămână sincron (fără să stricăm restul)
+      setAnswers((prev) =>
+        prev.map((a) =>
+          a.question_id === questionId
+            ? {
+                ...a,
+                explanation_text: text,
+                explanation_created_at: res.data?.explanation_created_at ?? a.explanation_created_at ?? null,
+              }
+            : a
+        )
+      );
     } catch (e: any) {
       const msg = e?.response?.data?.error || e?.message || "Eroare la generarea explicației.";
       setExplain((prev) => ({
@@ -197,9 +232,7 @@ export default function StudentResults() {
         <div className="bg-white rounded-2xl shadow p-8 border">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
-              <h1 className="text-3xl font-extrabold text-gray-900">
-                Rezultatele tale
-              </h1>
+              <h1 className="text-3xl font-extrabold text-gray-900">Rezultatele tale</h1>
               <p className="text-gray-600 mt-1">
                 Ai terminat sesiunea. Mai jos vezi răspunsurile și (dacă ai greșit) explicații generate cu AI.
               </p>
@@ -209,9 +242,7 @@ export default function StudentResults() {
               <div className="text-6xl font-extrabold text-purple-600 leading-none">
                 {score} / {total}
               </div>
-              <div className="text-gray-600 mt-2 font-semibold">
-                {percentage}% răspunsuri corecte
-              </div>
+              <div className="text-gray-600 mt-2 font-semibold">{percentage}% răspunsuri corecte</div>
 
               <div className="mt-3 w-full md:w-64 h-3 bg-gray-100 rounded-full overflow-hidden border">
                 <div
@@ -225,9 +256,7 @@ export default function StudentResults() {
 
         {/* ANSWERS */}
         <div className="bg-white rounded-2xl shadow p-8 border">
-          <h2 className="text-2xl font-extrabold mb-6 text-gray-900">
-            Răspunsuri detaliate
-          </h2>
+          <h2 className="text-2xl font-extrabold mb-6 text-gray-900">Răspunsuri detaliate</h2>
 
           {answers.length === 0 ? (
             <p className="text-gray-500 text-center">Nu există răspunsuri disponibile.</p>
@@ -236,13 +265,9 @@ export default function StudentResults() {
               {answers.map((a, index) => {
                 const ex = explain[a.question_id];
                 const userAns =
-                  a.selected_answers.length > 0
-                    ? a.selected_answers.map((x) => x.text).join(", ")
-                    : "—";
+                  a.selected_answers.length > 0 ? a.selected_answers.map((x) => x.text).join(", ") : "—";
                 const correctAns =
-                  a.correct_answers.length > 0
-                    ? a.correct_answers.map((x) => x.text).join(", ")
-                    : "—";
+                  a.correct_answers.length > 0 ? a.correct_answers.map((x) => x.text).join(", ") : "—";
 
                 return (
                   <div
@@ -251,11 +276,7 @@ export default function StudentResults() {
                       a.is_correct ? "border-green-200" : "border-red-200"
                     }`}
                   >
-                    <div
-                      className={`p-5 ${
-                        a.is_correct ? "bg-green-50" : "bg-red-50"
-                      }`}
-                    >
+                    <div className={`p-5 ${a.is_correct ? "bg-green-50" : "bg-red-50"}`}>
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <div className="flex items-center gap-2">
@@ -301,6 +322,7 @@ export default function StudentResults() {
                               )}
                             </button>
 
+                            {/* ✅ Dacă NU avem text (nici din cache), oferim butonul de generare */}
                             {ex?.open && !ex?.text && (
                               <button
                                 type="button"
@@ -324,11 +346,7 @@ export default function StudentResults() {
                     {/* EXPLANATION PANEL */}
                     {!a.is_correct && ex?.open && (
                       <div className="p-5 bg-white">
-                        {ex.loading && (
-                          <div className="text-sm text-gray-600">
-                            Se generează explicația…
-                          </div>
-                        )}
+                        {ex.loading && <div className="text-sm text-gray-600">Se generează explicația…</div>}
 
                         {ex.error && (
                           <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl p-3">
@@ -369,9 +387,7 @@ export default function StudentResults() {
                   <span className="font-bold text-gray-900">
                     #{i + 1} — {entry.email}
                   </span>
-                  <span className="text-purple-700 font-extrabold">
-                    {entry.score} pct
-                  </span>
+                  <span className="text-purple-700 font-extrabold">{entry.score} pct</span>
                 </div>
               ))}
             </div>

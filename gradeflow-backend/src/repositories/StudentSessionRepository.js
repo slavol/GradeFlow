@@ -303,6 +303,42 @@ class StudentSessionRepository {
     },
   });
 }
+
+// + ADD
+static async getAnswerRow(studentSessionId, questionId) {
+  return prisma.student_answers.findFirst({
+    where: {
+      student_session_id: Number(studentSessionId),
+      question_id: Number(questionId),
+    },
+    select: {
+      id: true,
+      selected_option_ids: true,
+      is_correct: true,
+      explanation_text: true,
+      explanation_created_at: true,
+    },
+  });
+}
+
+// + ADD
+static async saveExplanation(studentSessionId, questionId, explanation) {
+  // nu ai @@unique pe (student_session_id, question_id) în student_answers,
+  // deci folosim updateMany ca să fie safe.
+  const r = await prisma.student_answers.updateMany({
+    where: {
+      student_session_id: Number(studentSessionId),
+      question_id: Number(questionId),
+    },
+    data: {
+      explanation_text: explanation,
+      explanation_created_at: new Date(),
+    },
+  });
+
+  return r.count; // câte rânduri a actualizat
+}
+
 }
 
 
