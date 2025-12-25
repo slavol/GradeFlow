@@ -1,133 +1,269 @@
-# 🎓 GradeFlow — Smart Quiz Platform with Real-Time Evaluation & Analytics
+# 🎓 GradeFlow — Platformă Smart de Quiz-uri (LIVE) cu AI, Evaluare în Timp Real & Analytics
 
-**GradeFlow** este o aplicație web modernă, completă și scalabilă, concepută pentru **administrarea, susținerea și evaluarea quiz-urilor educaționale** în timp real. Platforma oferă o experiență profesională de evaluare digitală, fiind ideală pentru instituții educaționale, prezentări universitare și portofolii de programare.
-
-## ✨ Funcționalități Cheie
-
-GradeFlow oferă o suită de funcționalități pentru a eficientiza procesul de evaluare, atât pentru **Profesori** (🧑‍🏫), cât și pentru **Studenți** (🎓).
-
-### 🧑‍🏫 Profesor (Teacher)
-
-* **Creare & Gestionare Quiz-uri:** Adăugare titlu, descriere, timp-limită și generare automată a codului unic pentru sesiune.
-* **Gestionare Întrebări:** Suport pentru întrebări **single-choice** și **multiple-choice**, cu posibilitatea de ordonare a pozițiilor.
-* **Sesiuni LIVE:**
-    * Pornire sesiune cu cod de acces.
-    * **Monitorizare live** a studenților și vizualizare a scorurilor în timp real.
-* **Analytics Detaliat:**
-    * **Clasament** studenți.
-    * Procent de **finalizare**, **scor mediu**.
-    * Analiza performanței pe **fiecare întrebare** (procentaj de răspunsuri corecte).
-* **Export CSV:** Export complet al rezultatelor sesiunii (email, scor, status finalizare, timpul de terminare).
-* **Istoric Sesiuni:** Vizualizarea tuturor sesiunilor precedente.
-
-### 🎓 Student (Student)
-
-* **Dashboard Personal:** Istoric complet al tuturor quiz-urilor finalizate.
-* **Join Sesiune:** Acces rapid prin codul unic oferit de profesor.
-* **Workflow Complet:**
-    * Întrebări afișate **una câte una**.
-    * **Timer** pentru quiz-urile cu limită de timp.
-    * Evaluare automată imediat după trimiterea răspunsului.
-    * **Rezultate finale** detaliate și **clasament** la încheierea sesiunii.
+**GradeFlow** este o aplicație web completă pentru **crearea, rularea și evaluarea quiz-urilor** în timp real, cu roluri separate pentru **Profesori (🧑‍🏫)** și **Studenți (🎓)**. Include **sesiuni LIVE**, **analytics detaliat**, **export CSV**, plus un modul **AI (Gemini)** pentru:
+- generarea automată de întrebări din documente (PDF/DOCX) pentru profesori
+- explicații pentru răspunsuri greșite (cu **cache în DB**) pentru studenți
 
 ---
 
-## 🚀 Tehnologii Utilizate (Tech Stack)
-
-| Componentă | Tehnologii | Descriere |
-| :--- | :--- | :--- |
-| **Frontend** | React, TypeScript, React Router, TailwindCSS, Axios | Interfață dinamică, modernă și tipizată, cu stilizare rapidă. |
-| **Backend** | Node.js, Express.js, PostgreSQL | Server API robust, bază de date relațională fiabilă. |
-| **Autentificare** | JWT (JSON Web Tokens) | Protejarea rutelor și verificare roluri (`profesor`/`student`). |
-| **Utilități** | json2csv | Modul pentru exportul rapid al rezultatelor în format CSV. |
-
----
-
-## 🧠 Arhitectura Backend
-
-Proiectul folosește o structură de fișiere clară, bazată pe separarea responsabilităților (MVC-like pattern), pentru a asigura mentenabilitatea și scalabilitatea.
-
-* `controllers`: Logica de aplicare (ex: `Session`, `Quiz`, `Student`).
-* `routes`: Definirea endpoint-urilor API.
-* `repositories`: Interogări SQL structurate pentru interacțiunea cu baza de date.
-* `middleware`: Gestionarea autentificării JWT și a verificării rolurilor.
-* `db`: Conexiunea și gestionarea bazei de date PostgreSQL.
-* `app.js`: Fișierul principal de configurare a serverului.
-
-### 🔄 Fluxul unei Sesiuni Live
-
-1.  **Profesorul** creează un quiz.
-2.  **Profesorul** pornește o sesiune LIVE (se generează un cod de acces).
-3.  **Studentul** introduce codul în aplicație (`Join Session`).
-4.  **Serverul** validează studentul și îl înscrie la sesiune.
-5.  **Studentul** parcurge întrebările și trimite răspunsurile.
-6.  Fiecare răspuns este **evaluat automat** de către backend.
-7.  La final, se generează **scorul final** și **clasamentul**.
-8.  **Profesorul** vizualizează analytics-ul și poate **exporta CSV**.
+## 📌 Cuprins
+- [Funcționalități](#-funcționalități)
+  - [Profesor](#-profesor)
+  - [Student](#-student)
+  - [AI](#-ai)
+- [Tech Stack](#-tech-stack)
+- [Arhitectură](#-arhitectură)
+- [Instalare & Rulare Locală](#-instalare--rulare-locală)
+  - [Backend](#1-backend)
+  - [Frontend](#2-frontend)
+- [Variabile de Mediu](#-variabile-de-mediu)
+- [API (Endpoints principale)](#-api-endpoints-principale)
+- [Database (Prisma)](#-database-prisma)
+- [Troubleshooting](#-troubleshooting)
+- [Autor](#-autor)
 
 ---
 
-## 🛠 Instalare și Rulare
+## ✨ Funcționalități
 
-Pentru a rula proiectul local, urmați pașii de mai jos:
+### 🧑‍🏫 Profesor
+- **Creare & Gestionare Quiz-uri**
+  - titlu, descriere, limită de timp
+  - tip creare: `manual` / `ai`
+- **Gestionare Întrebări**
+  - suport **single-choice** / **multiple-choice**
+  - opțiuni multiple, marcarea răspunsului corect
+  - ordonare prin câmpul `position`
+- **Sesiuni LIVE**
+  - pornire sesiune + cod unic de acces
+  - monitorizare status (studenți, scoruri, finalizare)
+- **Analytics detaliat**
+  - clasament (ordonat după scor și timp)
+  - procent finalizare, scor mediu
+  - performanță pe întrebare (rata de răspuns corect)
+- **Export CSV**
+  - export rezultate (email, scor, status finalizare, finished_at)
+- **Istoric sesiuni**
+  - vizualizarea sesiunilor rulate anterior
 
-### ⚙️ 1. Backend
+### 🎓 Student
+- **Dashboard personal**
+  - istoric sesiuni finalizate
+- **Join sesiune**
+  - acces rapid cu codul de sesiune
+- **Rulare quiz**
+  - întrebări **una câte una**
+  - **timer** pentru quiz-urile cu limită de timp
+  - evaluare automată a răspunsului
+- **Rezultate finale**
+  - scor + procent
+  - răspunsuri detaliate (ales vs corect)
+  - clasament la final
 
-1.  Accesați folderul `backend`:
-    ```bash
-    cd backend
-    ```
-2.  Instalați dependențele:
-    ```bash
-    npm install
-    ```
-3.  Porniți serverul (necesită o instanță de PostgreSQL configurată):
-    ```bash
-    npm start
-    ```
-    > Serverul rulează la adresa: **http://localhost:7050**
-
-### 💻 2. Frontend
-
-1.  Accesați folderul `frontend`:
-    ```bash
-    cd ../frontend
-    ```
-2.  Instalați dependențele:
-    ```bash
-    npm install
-    ```
-3.  Rulați aplicația:
-    ```bash
-    npm run dev
-    ```
-    > Aplicația rulează la adresa: **http://localhost:5173**
-
----
-
-## 📌 API Endpoints Principale
-
-Toate rutele sunt protejate prin middleware de autentificare (JWT) și verificare rol (`profesor`/`student`). Token-ul se trimite în header-ul `Authorization: Bearer TOKEN`.
-
-| Categorie | Rute Principale (Exemple) |
-| :--- | :--- |
-| **Auth** | `/register`, `/login` |
-| **Profesor** | `/quizzes` (listare, creare), `/quizzes/:id/questions`, `/sessions/start`, `/sessions/:id/results`, `/dashboard/stats` |
-| **Student** | `/sessions/join`, `/sessions/:id/questions`, `/sessions/:id/submit`, `/personal-history` |
+### 🤖 AI
+- **Profesor: generare întrebări din document**
+  - upload **PDF/DOCX** → extragere text (pdf-parse / mammoth) → Gemini → întrebări normalizate
+- **Student: explicație pentru răspuns greșit (cu cache)**
+  - dacă studentul a răspuns greșit la o întrebare, poate cere o explicație
+  - explicația este **salvată în DB** (`student_answers.explanation_text`, `explanation_created_at`)
+  - la refresh / cereri ulterioare, explicația este returnată din cache (fără cost AI)
 
 ---
 
-## 🤖 Modul AI (Versiune Viitoare)
+## 🧰 Tech Stack
 
-Planificat pentru dezvoltare ulterioară, modulul AI va aduce îmbunătățiri semnificative:
+**Frontend**
+- React + TypeScript
+- React Router
+- TailwindCSS
+- Axios
+- Heroicons
 
-* Analiză automată a performanței studenților.
-* Recomandări personalizate de învățare.
-* Generare automată de întrebări.
-* Diagrame inteligente și interpretări avansate ale scorurilor.
+**Backend**
+- Node.js + Express.js
+- PostgreSQL
+- Prisma ORM
+- JWT Auth + Role Guard (`professor` / `student`)
+- Multer (upload fișiere)
+- pdf-parse + mammoth (extragere text)
+- json2csv (export CSV)
+
+**AI**
+- Google Gemini (`@google/generative-ai`)
+- Model configurabil prin `GEMINI_MODEL` (ex: `gemini-2.5-flash`)
 
 ---
 
-## ✨ Contributor
+## 🏗 Arhitectură
+
+Structură backend orientată pe separarea responsabilităților:
+- `controllers/` — logică API (quiz, sesiuni, rezultate, AI)
+- `routes/` — definirea rutelor (order matters)
+- `repositories/` — acces DB (Prisma)
+- `middleware/` — auth JWT, verificare rol, upload
+- `services/` — integrare Gemini + utilitare
+- `utils/` — parsare documente (PDF/DOCX)
+- `prisma/` — schema + client
+
+---
+
+## 🛠 Instalare & Rulare Locală
+
+### 1) Backend
+
+```bash
+cd gradeflow-backend
+npm install
+```
+
+**1. Configurează `.env`** (vezi secțiunea [Variabile de Mediu](#-variabile-de-mediu))
+
+**2. Prisma (migrări + client)**
+
+```bash
+npx prisma generate
+npx prisma migrate dev
+```
+
+**3. Pornește serverul**
+
+```bash
+npm start
+```
+
+Serverul rulează pe:
+- `http://localhost:7050`
+
+---
+
+### 2) Frontend
+
+```bash
+cd gradeflow-frontend
+npm install
+npm run dev
+```
+
+Aplicația rulează pe:
+- `http://localhost:5173`
+
+---
+
+## 🔐 Variabile de Mediu
+
+### Backend (`gradeflow-backend/.env`)
+
+```env
+# PostgreSQL
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/gradeflow?schema=public"
+
+# JWT
+JWT_SECRET="your_super_secret"
+
+# Gemini
+GEMINI_API_KEY="your_gemini_api_key"
+# optional
+GEMINI_MODEL="gemini-2.5-flash"
+
+# optional (port)
+PORT=7050
+```
+
+> Dacă nu setezi `GEMINI_MODEL`, aplicația folosește implicit `gemini-2.5-flash`.
+
+---
+
+## 🌐 API Endpoints Principale
+
+> Toate rutele protejate cer header:
+>
+> `Authorization: Bearer <TOKEN>`
+
+### Auth
+- `POST /auth/register`
+- `POST /auth/login`
+
+### Profesor — Quiz
+- `POST /professor/create` — creează quiz
+- `POST /professor/quiz/:quizId/questions` — adaugă întrebări
+- `GET  /professor/quizzes` — listare quiz-uri
+- `GET  /professor/quiz/:quizId` — detalii quiz
+
+### Profesor — Sesiuni LIVE
+- `POST /professor/session/start` — pornește sesiune pentru un quiz
+- `GET  /professor/session/:sessionId` — status sesiune (live)
+- `GET  /professor/session/:sessionId/results` — rezultate + analytics
+- `GET  /professor/session/:sessionId/export-csv` — export CSV
+- `GET  /professor/stats` — stats dashboard
+
+### Profesor — AI (generare întrebări din document)
+- `POST /ai/professor/generate-questions`
+  - `multipart/form-data` cu `file` (PDF/DOCX)
+  - (opțional) `hint` / instrucțiuni (dacă este suportat în frontend)
+
+**Răspuns (exemplu):**
+```json
+{
+  "success": true,
+  "questions": [
+    {
+      "title": "Întrebare...",
+      "question_type": "single",
+      "options": [
+        { "text": "A", "is_correct": false },
+        { "text": "B", "is_correct": true }
+      ]
+    }
+  ]
+}
+```
+
+### Student — Sesiuni
+- `POST /student/session/join` — intră în sesiune (cu `sessionCode`)
+- `GET  /student/session/:id` — întrebare curentă + status
+- `POST /student/session/:id/answer` — trimite răspuns (pe întrebare)
+- `POST /student/session/:id/answer/all` — trimite toate răspunsurile (dacă e folosit)
+- `GET  /student/session/:id/results` — rezultate + detalii + clasament
+- `GET  /student/session/history` — istoric student
+
+### Student — AI (explicație pentru răspuns greșit, cu cache)
+- `POST /student/session/:sessionId/explanation/:questionId`
+
+**Răspuns (exemplu):**
+```json
+{
+  "success": true,
+  "cached": true,
+  "session_id": 12,
+  "question_id": 3,
+  "explanation": "Explicația...",
+  "explanation_created_at": "2025-01-01T10:00:00.000Z",
+  "selected_options": ["..."],
+  "correct_options": ["..."]
+}
+```
+
+---
+
+## 🗄 Database (Prisma)
+
+Baza de date este PostgreSQL, gestionată prin Prisma.
+
+### Cache AI (Student)
+În `student_answers` există câmpuri pentru cache:
+- `explanation_text` (Text)
+- `explanation_created_at` (DateTime)
+
+Flux:
+1. Student cere explicație pentru o întrebare greșită
+2. Backend verifică dacă există `explanation_text`
+3. Dacă există → returnează direct (cached)
+4. Dacă nu → generează cu Gemini și salvează în DB
+
+
+
+---
+
+## 👤 Autor
 
 Proiect realizat de: **Preda Slavoliub-Denis**
