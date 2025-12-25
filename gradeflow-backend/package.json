@@ -14,6 +14,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^5.22.0",
     "bcrypt": "^6.0.0",
@@ -22,8 +23,12 @@
     "express": "^5.1.0",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.11.0",
+    "multer": "^2.0.2",
+    "pdf-parse": "^1.1.1",
     "pg": "^8.16.3",
-    "prisma": "^5.22.0"
+    "prisma": "^5.22.0",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@types/node": "^25.0.3",

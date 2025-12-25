@@ -12,6 +12,9 @@ const professorRoutes = require("./routes/professorRoutes");
 
 const studentSessionRoutes = require("./routes/studentSessionRoutes");
 
+// AI
+const professorAIRoutes = require("./routes/professorAIRoutes");
+
 const app = express();
 
 app.use(
@@ -47,5 +50,11 @@ app.use("/professor", professorQuestionsRoutes);
 // 🎓 STUDENT LIVE SESSION
 // ======================================================
 app.use("/student/session", studentSessionRoutes);
+
+//===================
+// AI
+//===================
+
+app.use("/ai/professor",professorAIRoutes);
 
 module.exports = app;
