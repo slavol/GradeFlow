@@ -14,6 +14,7 @@ const studentSessionRoutes = require("./routes/studentSessionRoutes");
 
 // AI
 const professorAIRoutes = require("./routes/professorAIRoutes");
+const studentAIRoutes = require("./routes/studentAIRoutes");
 
 const app = express();
 
@@ -56,5 +57,6 @@ app.use("/student/session", studentSessionRoutes);
 //===================
 
 app.use("/ai/professor",professorAIRoutes);
+app.use("/ai/student", studentAIRoutes);
 
 module.exports = app;

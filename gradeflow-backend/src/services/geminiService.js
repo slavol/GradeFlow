@@ -93,6 +93,46 @@ ${text}
   return normalizeGeminiQuestions(parsed);
 }
 
+async function generateExplanationForWrongAnswer({
+  questionTitle,
+  questionType,
+  options,
+  selectedOptions,
+  correctOptions,
+}) {
+  const prompt = `
+Ești un asistent educațional pentru studenți.
+
+Sarcină:
+Explică pe scurt și clar de ce răspunsul ales este greșit și de ce răspunsul corect este corect.
+
+Reguli:
+- Răspunde în română
+- Fără markdown, fără liste cu bullet-uri dacă nu e nevoie
+- Maxim ~10 propoziții
+- Menționează explicit care este răspunsul corect (ca text)
+
+Întrebare:
+"${questionTitle}"
+
+Tip întrebare: ${questionType}
+
+Opțiuni:
+${options.map((t, i) => `${i + 1}. ${t}`).join("\n")}
+
+Răspuns ales de student:
+${selectedOptions.length ? selectedOptions.join(" | ") : "(nimic selectat)"}
+
+Răspuns corect:
+${correctOptions.join(" | ")}
+`;
+
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  return (response.text() || "").trim();
+}
+
 module.exports = {
   generateQuestionsFromText,
+  generateExplanationForWrongAnswer,
 };
