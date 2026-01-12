@@ -6,9 +6,7 @@ const requireRole = require("../middleware/requireRole");
 const QuestionCtrl = require("../controllers/ProfessorQuestionController");
 const OptionCtrl = require("../controllers/ProfessorOptionController");
 
-// -------------------- QUESTIONS --------------------
 
-// CREATE question
 router.post(
   "/quiz/:quizId/question/create",
   auth,
@@ -16,7 +14,6 @@ router.post(
   QuestionCtrl.createQuestion
 );
 
-// LIST questions for quiz
 router.get(
   "/quiz/:quizId/questions",
   auth,
@@ -24,7 +21,6 @@ router.get(
   QuestionCtrl.listQuestions
 );
 
-// DELETE question
 router.delete(
   "/quiz/:quizId/question/:questionId/delete",
   auth,
@@ -32,9 +28,7 @@ router.delete(
   QuestionCtrl.deleteQuestion
 );
 
-// -------------------- OPTIONS --------------------
 
-// CREATE option
 router.post(
   "/quiz/:quizId/question/:questionId/option/create",
   auth,
@@ -42,7 +36,6 @@ router.post(
   OptionCtrl.createOption
 );
 
-// LIST options for question
 router.get(
   "/quiz/:quizId/question/:questionId/options",
   auth,
@@ -50,7 +43,6 @@ router.get(
   OptionCtrl.listOptions
 );
 
-// DELETE option
 router.delete(
   "/quiz/:quizId/question/:questionId/option/:optionId/delete",
   auth,

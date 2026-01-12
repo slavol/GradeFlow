@@ -30,7 +30,6 @@ export default function Login() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0b0b10] text-white flex items-center justify-center px-4">
 
-      {/* ===== MOVING PURPLE BLOBS ===== */}
       <motion.div
         className="absolute w-[700px] h-[700px] bg-purple-700 rounded-full blur-[180px] opacity-40"
         animate={{ x: [0, 120, -80, 0], y: [0, -100, 80, 0] }}
@@ -52,7 +51,6 @@ export default function Login() {
         style={{ top: "30%", left: "40%" }}
       />
 
-      {/* ===== LOGIN CARD ===== */}
       <motion.form
         onSubmit={login}
         initial={{ opacity: 0, scale: 0.95 }}

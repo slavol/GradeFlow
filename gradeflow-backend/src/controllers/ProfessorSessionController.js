@@ -7,15 +7,11 @@ const { Parser } = require("json2csv");
 
 module.exports = {
 
-  // =====================================================
-  // START SESSION
-  // =====================================================
   startSession: async (req, res) => {
   try {
     const quizId = req.params.id;
     const professorId = req.user.id;
 
-    // ✅ SAFE DEFAULT
     const { mode = "LIVE" } = req.body || {};
 
     const session = await SessionRepository.createSession(
@@ -36,9 +32,7 @@ module.exports = {
   }
 },
 
-  // =====================================================
-  // GET LIVE SESSION INFO (for professor panel)
-  // =====================================================
+
   getSession: async (req, res) => {
     try {
       const sessionId = req.params.id;
@@ -71,9 +65,6 @@ module.exports = {
     }
   },
 
-  // =====================================================
-  // CLOSE SESSION
-  // =====================================================
   closeSession: async (req, res) => {
     try {
       const sessionId = req.params.id;
@@ -89,29 +80,23 @@ module.exports = {
     }
   },
 
-  // =====================================================
-  // EXPORT CSV
-  // =====================================================
   async exportCSV(req, res) {
     try {
       const sessionId = req.params.id;
       const professorId = req.user.id;
 
-      // verificăm dacă sesiunea aparține profesorului
       const session = await QuizRepository.findSessionById(sessionId);
 
       if (!session || session.professor_id !== professorId) {
         return res.status(403).json({ error: "Nu ai acces la această sesiune." });
       }
 
-      // leaderboard cu scorurile
       const leaderboard = await StudentSessionRepo.getLeaderboard(sessionId);
 
       if (!leaderboard || leaderboard.length === 0) {
         return res.status(404).json({ error: "Nu există rezultate pentru export." });
       }
 
-      // pregătim datele pentru CSV
       const data = leaderboard.map((row) => ({
         email: row.email,
         score: row.score,
@@ -123,7 +108,6 @@ module.exports = {
       const parser = new Parser({ fields });
       const csv = parser.parse(data);
 
-      // setăm header-ele pentru download
       res.setHeader("Content-Type", "text/csv");
       res.setHeader(
         "Content-Disposition",

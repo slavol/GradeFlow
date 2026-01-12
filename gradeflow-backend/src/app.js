@@ -7,12 +7,10 @@ const professorQuizRoutes = require("./routes/professorQuizRoutes");
 const professorQuestionsRoutes = require("./routes/professorQuestionsRoutes");
 const professorSessionRoutes = require("./routes/professorSessionRoutes");
 
-// 👇 NEW (stats)
 const professorRoutes = require("./routes/professorRoutes");
 
 const studentSessionRoutes = require("./routes/studentSessionRoutes");
 
-// AI
 const professorAIRoutes = require("./routes/professorAIRoutes");
 const studentAIRoutes = require("./routes/studentAIRoutes");
 
@@ -28,33 +26,18 @@ app.use(
 
 app.use(express.json());
 
-// 🔐 AUTH
 app.use("/auth", authRoutes);
 
-// ======================================================
-// 🧑‍🏫 PROFESSOR ROUTES — ORDER MATTERS!
-// ======================================================
 
-// QUIZ CRUD
 app.use("/professor", professorQuizRoutes);
 
-// SESSION MANAGEMENT
 app.use("/professor", professorSessionRoutes);
 
-// NEW: PROFESSOR DASHBOARD STATS ( /professor/stats )
 app.use("/professor", professorRoutes);
 
-// OPTIONS & OLD QUESTIONS ROUTES LAST
 app.use("/professor", professorQuestionsRoutes);
 
-// ======================================================
-// 🎓 STUDENT LIVE SESSION
-// ======================================================
 app.use("/student/session", studentSessionRoutes);
-
-//===================
-// AI
-//===================
 
 app.use("/ai/professor",professorAIRoutes);
 app.use("/ai/student", studentAIRoutes);

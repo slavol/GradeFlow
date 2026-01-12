@@ -8,7 +8,6 @@ const QuestionsEditController = require("../controllers/QuestionsEditController"
 
 const questionsRoutes = require("./questionRoutes");
 
-// ------------------ Main Quiz Operations ------------------
 
 router.post(
   "/create",
@@ -31,7 +30,6 @@ router.delete(
   ProfessorQuizController.deleteQuiz
 );
 
-// ------------------ View & Edit Quiz ------------------
 
 router.get(
   "/quiz/:id",
@@ -54,8 +52,6 @@ router.put(
   QuestionsEditController.updateQuestions
 );
 
-// ------------------ Bulk Question Add (child router) ------------------
-// FIX: must be prefixed to avoid route conflicts
 
 router.use(
   "/quiz/:quizId",

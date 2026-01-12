@@ -28,9 +28,6 @@ export default function ProfessorLiveSession() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // =========================
-  // LOAD SINGLE SESSION
-  // =========================
   const loadSession = async () => {
     try {
       const res = await api.get(`/professor/session/${id}`);
@@ -39,7 +36,6 @@ export default function ProfessorLiveSession() {
       setStudents(res.data.students);
       setLoading(false);
 
-      // dacă sesiunea a fost închisă → redirect la rezultate
       if (res.data.session.status === "closed") {
         navigate(`/professor/session/${id}/results`);
       }
@@ -59,9 +55,6 @@ export default function ProfessorLiveSession() {
     return () => clearInterval(interval);
   }, [id]);
 
-  // =========================
-  // CLOSE SESSION
-  // =========================
   const closeSession = async () => {
     if (!confirm("Sigur vrei să închizi sesiunea?")) return;
 
@@ -74,9 +67,6 @@ export default function ProfessorLiveSession() {
     }
   };
 
-  // =========================
-  // LOADING
-  // =========================
   if (loading || !session) {
     return (
       <div className="min-h-screen bg-[#f7f8fc]">
@@ -88,15 +78,11 @@ export default function ProfessorLiveSession() {
     );
   }
 
-  // =========================
-  // UI
-  // =========================
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
       <ProfessorNavbar />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* HEADER */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">
             Sesiune live
@@ -106,7 +92,6 @@ export default function ProfessorLiveSession() {
           </p>
         </div>
 
-        {/* INFO */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <InfoCard label="Cod sesiune" value={session.session_code} mono />
           <InfoCard
@@ -120,7 +105,6 @@ export default function ProfessorLiveSession() {
           />
         </div>
 
-        {/* STUDENTS */}
         <div className="bg-white rounded-2xl shadow border p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">
             Studenți conectați
@@ -154,7 +138,6 @@ export default function ProfessorLiveSession() {
           )}
         </div>
 
-        {/* ACTIONS */}
         <div className="flex flex-col sm:flex-row gap-4">
           <button
             onClick={closeSession}
@@ -175,9 +158,6 @@ export default function ProfessorLiveSession() {
   );
 }
 
-// =========================
-// INFO CARD
-// =========================
 function InfoCard({
   label,
   value,

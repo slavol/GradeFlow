@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import ProfessorNavbar from "../../components/ProfessorNavbar";
 
-/* ================= TYPES ================= */
 
 type StudentRow = {
   student_session_id: number;
@@ -32,8 +31,6 @@ type SessionData = {
   analytics: QuestionAnalytics[];
 };
 
-/* ================= COMPONENT ================= */
-
 export default function SessionResults() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -41,7 +38,6 @@ export default function SessionResults() {
   const [data, setData] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  /* ================= LOAD RESULTS ================= */
 
   const loadResults = async () => {
     try {
@@ -64,7 +60,6 @@ export default function SessionResults() {
     loadResults();
   }, [id]);
 
-  /* ================= EXPORT CSV ================= */
 
   const handleCSVDownload = async () => {
     try {
@@ -86,7 +81,6 @@ export default function SessionResults() {
     }
   };
 
-  /* ================= STATES ================= */
 
   if (loading) {
     return (
@@ -124,7 +118,6 @@ export default function SessionResults() {
         )
       : 0;
 
-  /* ================= UI ================= */
 
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
@@ -132,7 +125,6 @@ export default function SessionResults() {
 
       <div className="max-w-6xl mx-auto px-4 py-8">
 
-        {/* HEADER */}
         <div className="flex flex-col md:flex-row md:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
@@ -158,18 +150,15 @@ export default function SessionResults() {
           </div>
         </div>
 
-        {/* STATS */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
           <StatCard title="Participanți" value={total} />
           <StatCard title="Finalizate" value={completed} />
           <StatCard title="Scor mediu" value={avgScore} />
         </div>
 
-        {/* STUDENTS */}
         <div className="bg-white rounded-2xl shadow p-6 border mb-10">
           <h2 className="text-2xl font-semibold mb-6">Studenți</h2>
 
-          {/* DESKTOP */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full border-collapse">
               <thead className="border-b bg-gray-100">
@@ -218,7 +207,6 @@ export default function SessionResults() {
             </table>
           </div>
 
-          {/* MOBILE */}
           <div className="md:hidden space-y-4">
             {students.map((s) => (
               <div
@@ -259,7 +247,6 @@ export default function SessionResults() {
           </div>
         </div>
 
-        {/* ANALYTICS */}
         <div className="bg-white rounded-2xl shadow p-6 border mb-10">
           <h2 className="text-2xl font-semibold mb-6">
             Analytics pe întrebări
@@ -299,7 +286,6 @@ export default function SessionResults() {
           </div>
         </div>
 
-        {/* BACK */}
         <button
           onClick={() => navigate("/professor/sessions/history")}
           className="px-6 py-3 bg-gray-300 rounded-xl hover:bg-gray-400"
@@ -311,7 +297,6 @@ export default function SessionResults() {
   );
 }
 
-/* ================= SMALL COMPONENT ================= */
 
 function StatCard({ title, value }: { title: string; value: number }) {
   return (

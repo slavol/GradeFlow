@@ -1,9 +1,6 @@
 const OptionRepository = require("../repositories/OptionRepository");
 
 module.exports = {
-  // ----------------------------------------------------
-  // CREATE OPTION
-  // ----------------------------------------------------
   createOption: async (req, res) => {
     try {
       const { questionId } = req.params;
@@ -30,9 +27,7 @@ module.exports = {
     }
   },
 
-  // ----------------------------------------------------
-  // LIST OPTIONS FOR A QUESTION
-  // ----------------------------------------------------
+
   listOptions: async (req, res) => {
     try {
       const { questionId } = req.params;
@@ -47,9 +42,7 @@ module.exports = {
     }
   },
 
-  // ----------------------------------------------------
-  // DELETE OPTION
-  // ----------------------------------------------------
+
   deleteOption: async (req, res) => {
     try {
       const { optionId } = req.params;
@@ -64,9 +57,7 @@ module.exports = {
     }
   },
 
-  // ----------------------------------------------------
-  // UPDATE OPTION
-  // ----------------------------------------------------
+  
   updateOption: async (req, res) => {
     try {
       const { optionId } = req.params;

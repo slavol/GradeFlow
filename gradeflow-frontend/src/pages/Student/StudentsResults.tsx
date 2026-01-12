@@ -13,15 +13,12 @@ import {
   TrophyIcon,
 } from "@heroicons/react/24/outline";
 
-/* ================= TYPES ================= */
 interface AnswerDetails {
   question_id: number;
   question_text: string;
   correct_answers: { id: number; text: string }[];
   selected_answers: { id: number; text: string }[];
   is_correct: boolean;
-
-  // ✅ pentru cache din DB (vine din GET results)
   explanation_text?: string | null;
   explanation_created_at?: string | null;
 }
@@ -41,7 +38,6 @@ type ExplainState = {
   createdAt?: string | null;
 };
 
-/* ================= COMPONENT ================= */
 export default function StudentResults() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
@@ -54,7 +50,6 @@ export default function StudentResults() {
 
   const [explain, setExplain] = useState<Record<number, ExplainState>>({});
 
-  /* ================= LOAD RESULTS ================= */
   const loadResults = async () => {
     try {
       const res = await api.get(`/student/session/${sessionId}/results`);
@@ -69,7 +64,6 @@ export default function StudentResults() {
         selected_answers: Array.isArray(a.selected_answers) ? a.selected_answers : [],
         is_correct: Boolean(a.is_correct),
 
-        // ✅ cache fields (dacă backend-ul le trimite)
         explanation_text: a.explanation_text ?? null,
         explanation_created_at: a.explanation_created_at ?? null,
       }));
@@ -77,7 +71,6 @@ export default function StudentResults() {
       setAnswers(normalizedAnswers);
       setLeaderboard(res.data.leaderboard || []);
 
-      // ✅ init state explain: dacă există explanation_text din DB, îl punem direct
       const init: Record<number, ExplainState> = {};
       for (const a of normalizedAnswers) {
         const cachedText =
@@ -105,15 +98,12 @@ export default function StudentResults() {
 
   useEffect(() => {
     loadResults();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ================= DERIVED ================= */
   const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
 
   const wrongCount = useMemo(() => answers.filter((a) => !a.is_correct).length, [answers]);
 
-  /* ================= AI EXPLAIN ================= */
   const toggleExplain = (questionId: number) => {
     setExplain((prev) => ({
       ...prev,
@@ -138,8 +128,6 @@ export default function StudentResults() {
     }));
 
     try {
-      // ✅ ruta ta actuală: POST /student/session/:sessionId/explanation/:questionId
-      // trimitem și body ca să fie compatibil și dacă în controller citești req.body
       const res = await api.post(
         `/student/session/${sessionId}/explanation/${questionId}`,
         {
@@ -163,7 +151,6 @@ export default function StudentResults() {
         },
       }));
 
-      // ✅ opțional: actualizăm și answers local ca să rămână sincron (fără să stricăm restul)
       setAnswers((prev) =>
         prev.map((a) =>
           a.question_id === questionId
@@ -190,7 +177,6 @@ export default function StudentResults() {
     }
   };
 
-  /* ================= UI STATES ================= */
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f5f7fb]">
@@ -200,13 +186,11 @@ export default function StudentResults() {
     );
   }
 
-  /* ================= UI ================= */
   return (
     <div className="min-h-screen bg-[#f5f7fb]">
       <StudentNavbar />
 
       <div className="max-w-5xl mx-auto px-4 py-10 space-y-8">
-        {/* TOP BAR */}
         <div className="flex items-start justify-between gap-4">
           <button
             onClick={() => navigate("/student/dashboard")}
@@ -228,7 +212,6 @@ export default function StudentResults() {
           </div>
         </div>
 
-        {/* SCORE */}
         <div className="bg-white rounded-2xl shadow p-8 border">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
@@ -254,7 +237,6 @@ export default function StudentResults() {
           </div>
         </div>
 
-        {/* ANSWERS */}
         <div className="bg-white rounded-2xl shadow p-8 border">
           <h2 className="text-2xl font-extrabold mb-6 text-gray-900">Răspunsuri detaliate</h2>
 
@@ -322,7 +304,6 @@ export default function StudentResults() {
                               )}
                             </button>
 
-                            {/* ✅ Dacă NU avem text (nici din cache), oferim butonul de generare */}
                             {ex?.open && !ex?.text && (
                               <button
                                 type="button"
@@ -343,7 +324,6 @@ export default function StudentResults() {
                       </div>
                     </div>
 
-                    {/* EXPLANATION PANEL */}
                     {!a.is_correct && ex?.open && (
                       <div className="p-5 bg-white">
                         {ex.loading && <div className="text-sm text-gray-600">Se generează explicația…</div>}
@@ -368,7 +348,6 @@ export default function StudentResults() {
           )}
         </div>
 
-        {/* LEADERBOARD */}
         <div className="bg-white rounded-2xl shadow p-8 border">
           <div className="flex items-center gap-2 mb-6">
             <TrophyIcon className="w-7 h-7 text-yellow-500" />
@@ -394,7 +373,6 @@ export default function StudentResults() {
           )}
         </div>
 
-        {/* BACK */}
         <div className="text-center">
           <button
             onClick={() => navigate("/student/dashboard")}

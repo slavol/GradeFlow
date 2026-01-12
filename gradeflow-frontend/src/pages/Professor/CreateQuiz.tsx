@@ -64,30 +64,22 @@ function normalizeQuestions(raw: any[]): Question[] {
 export default function CreateQuiz() {
   const navigate = useNavigate();
 
-  // META
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [timeLimit, setTimeLimit] = useState(15);
 
-  // Manual / AI
   const [creationType, setCreationType] = useState<CreationType>("manual");
 
-  // Questions
   const [questions, setQuestions] = useState<Question[]>([]);
 
-  // AI state
   const [aiFile, setAiFile] = useState<File | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiHint, setAiHint] = useState<string>(""); // optional prompt/instructions
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // UX state
   const [saving, setSaving] = useState(false);
 
-  // ==========================
-  // VALIDARE
-  // ==========================
   const validateQuiz = () => {
     if (!title.trim()) return "Titlul quiz-ului este obligatoriu";
     if (questions.length === 0) return "Trebuie să adaugi cel puțin o întrebare";
@@ -111,9 +103,6 @@ export default function CreateQuiz() {
     return null;
   };
 
-  // ==========================
-  // ACTIONS — QUESTIONS
-  // ==========================
   const addQuestion = () => {
     setQuestions((prev) => [
       ...prev,
@@ -157,9 +146,6 @@ export default function CreateQuiz() {
     });
   };
 
-  // ==========================
-  // AI — GENERATE (FIXED ✅)
-  // ==========================
   const generateFromDocument = async () => {
     setAiError(null);
 
@@ -172,18 +158,14 @@ export default function CreateQuiz() {
 
     try {
       const fd = new FormData();
-      fd.append("file", aiFile); // 🔥 trebuie EXACT "file" (upload.single("file"))
+      fd.append("file", aiFile);
       if (aiHint.trim()) fd.append("hint", aiHint.trim());
 
-      // IMPORTANT:
-      // - NU seta Content-Type manual aici!
-      // - browserul pune singur boundary-ul corect
       const base =
         (api as any)?.defaults?.baseURL ||
         (import.meta as any).env?.VITE_API_URL ||
         "http://localhost:7050";
 
-      // dacă token-ul tău e stocat sub altă cheie, schimbă aici
       const token =
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken") ||
@@ -219,9 +201,6 @@ export default function CreateQuiz() {
     }
   };
 
-  // ==========================
-  // SUBMIT
-  // ==========================
   const submitQuiz = async () => {
     const validationError = validateQuiz();
     if (validationError) return alert(validationError);
@@ -248,9 +227,6 @@ export default function CreateQuiz() {
     }
   };
 
-  // ==========================
-  // UI helpers
-  // ==========================
   const questionCount = questions.length;
 
   const totalOptions = useMemo(() => {
@@ -264,7 +240,6 @@ export default function CreateQuiz() {
       <EditQuizNavbar />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
             <button
@@ -297,11 +272,8 @@ export default function CreateQuiz() {
           </div>
         </div>
 
-        {/* Main grid */}
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left / Meta */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Meta card */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-extrabold text-gray-900">Setări quiz</h2>
@@ -366,7 +338,6 @@ export default function CreateQuiz() {
               </div>
             </div>
 
-            {/* Creation type / AI card */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
               <h2 className="text-lg font-extrabold text-gray-900">Metodă creare</h2>
 
@@ -472,7 +443,6 @@ export default function CreateQuiz() {
               )}
             </div>
 
-            {/* Save */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
               <button
                 type="button"
@@ -493,7 +463,6 @@ export default function CreateQuiz() {
             </div>
           </div>
 
-          {/* Right / Editor */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-sm border p-6">
               <div className="flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">

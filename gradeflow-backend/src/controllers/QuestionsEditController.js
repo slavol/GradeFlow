@@ -14,27 +14,22 @@ module.exports = {
       console.log("🔄 Updating questions for quiz:", quizId);
       console.log("📚 Received:", questions.length, "questions");
 
-      // 1️⃣ Ștergem întrebările existente
       await pool.query(`DELETE FROM questions WHERE quiz_id = $1`, [quizId]);
 
-      // 2️⃣ Le recreăm în ordinea corectă
       for (let index = 0; index < questions.length; index++) {
         const q = questions[index];
 
-        // Creăm întrebarea
         const newQ = await QuestionRepository.createQuestion(
           quizId,
           q.title,
           q.question_type
         );
 
-        // Setăm poziția (notă: createQuestion nu o setează)
         await pool.query(
           `UPDATE questions SET position = $1 WHERE id = $2`,
           [index, newQ.id]
         );
 
-        // Adăugăm opțiunile
         if (Array.isArray(q.options)) {
           for (const opt of q.options) {
             await QuestionRepository.addOption(

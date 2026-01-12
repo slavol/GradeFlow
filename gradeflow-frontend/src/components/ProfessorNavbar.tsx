@@ -12,7 +12,6 @@ export default function ProfessorNavbar() {
     <nav className="sticky top-0 z-50 bg-white border-b shadow-sm">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
 
-        {/* LOGO */}
         <Link
           to="/professor/dashboard"
           className="flex items-center gap-2"
@@ -23,7 +22,6 @@ export default function ProfessorNavbar() {
           </span>
         </Link>
 
-        {/* ACTIONS */}
         <div className="flex items-center gap-2 sm:gap-3">
 
           <button

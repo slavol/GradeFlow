@@ -36,12 +36,8 @@ export default function ViewQuiz() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<number | null>(null);
 
-  // 🔥 NOU
   const [mode, setMode] = useState<SessionMode>("LIVE");
 
-  // =========================
-  // LOAD QUIZ
-  // =========================
   const loadQuiz = async () => {
     try {
       const res = await api.get(`/professor/quiz/${id}`);
@@ -67,13 +63,10 @@ export default function ViewQuiz() {
     alert("Cod copiat!");
   };
 
-  // =========================
-  // START SESSION (🔥 FIX)
-  // =========================
   const startSession = async () => {
     try {
       const res = await api.post(`/professor/quiz/${id}/start`, {
-        mode, // 🔥 CRUCIAL
+        mode, 
       });
 
       navigate(`/professor/session/${res.data.session.id}`);
@@ -83,9 +76,6 @@ export default function ViewQuiz() {
     }
   };
 
-  // =========================
-  // UI STATES
-  // =========================
   if (loading)
     return (
       <div className="min-h-screen bg-[#f7f8fc]">
@@ -102,16 +92,12 @@ export default function ViewQuiz() {
       </div>
     );
 
-  // =========================
-  // UI
-  // =========================
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
       <ProfessorNavbar />
 
       <div className="max-w-5xl mx-auto px-4 py-8">
 
-        {/* HEADER */}
         <div className="bg-white rounded-2xl shadow border p-6 mb-8">
           <div className="flex flex-col md:flex-row justify-between gap-6">
 
@@ -138,14 +124,12 @@ export default function ViewQuiz() {
             </div>
           </div>
 
-          {/* INFO */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
             <InfoCard label="⏳ Timp" value={`${quiz.time_limit} min`} />
             <InfoCard label="❓ Întrebări" value={quiz.questions.length} />
             <InfoCard label="🧠 Tip" value={quiz.creation_type} />
           </div>
 
-          {/* 🔥 SESSION MODE */}
           <div className="mt-6">
             <p className="text-sm text-gray-500 mb-2">
               Mod de desfășurare sesiune
@@ -177,7 +161,6 @@ export default function ViewQuiz() {
           </div>
         </div>
 
-        {/* QUESTIONS */}
         <div className="bg-white rounded-2xl shadow border p-6">
           <h2 className="text-2xl font-semibold mb-6">Întrebări</h2>
 
@@ -219,7 +202,6 @@ export default function ViewQuiz() {
           </div>
         </div>
 
-        {/* ACTIONS */}
         <div className="mt-8 flex flex-col sm:flex-row gap-4">
           <button
             onClick={startSession}

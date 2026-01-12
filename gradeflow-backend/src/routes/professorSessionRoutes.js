@@ -7,7 +7,6 @@ const ProfessorSessionController = require("../controllers/ProfessorSessionContr
 const ProfessorResultsController = require("../controllers/ProfessorResultsController");
 const ProfessorSessionHistoryController= require("../controllers/ProfessorSessionHistoryController");
 
-// START SESSION
 router.post(
   "/quiz/:id/start",
   auth,
@@ -15,7 +14,6 @@ router.post(
   ProfessorSessionController.startSession
 );
 
-// GET LIVE SESSION STATUS
 router.get(
   "/session/:id",
   auth,
@@ -23,7 +21,6 @@ router.get(
   ProfessorSessionController.getSession
 );
 
-// CLOSE SESSION
 router.post(
   "/session/:id/close",
   auth,
@@ -59,7 +56,6 @@ router.get(
   ProfessorSessionController.exportCSV
 );
 
-// GET /professor/sessions/live
 router.get(
   "/sessions/live",
   auth,

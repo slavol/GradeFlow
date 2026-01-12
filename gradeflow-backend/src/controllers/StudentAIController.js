@@ -52,9 +52,6 @@ module.exports = {
           .json({ error: "Răspunsul este deja corect. Nu ai nevoie de explicație." });
       }
 
-      // ==========================
-      // ✅ CACHE: dacă există în DB, returnăm direct
-      // ==========================
       const answerRow = await StudentSessionRepo.getAnswerRow(studentSession.id, q.id);
       if (answerRow?.explanation_text && String(answerRow.explanation_text).trim().length > 0) {
         const correctTexts = await StudentSessionRepo.getOptionTexts(correctIds);
@@ -72,9 +69,6 @@ module.exports = {
         });
       }
 
-      // ==========================
-      // ❗ Nu avem cache -> generăm cu Gemini
-      // ==========================
       const allOptions = await StudentSessionRepo.getQuestionOptions(q.id);
       const optionTexts = allOptions.map((o) => o.text);
 

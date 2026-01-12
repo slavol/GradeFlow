@@ -6,12 +6,8 @@ function generateSessionCode() {
 }
 
 class SessionRepository {
-
-  // =============================
-  // CREATE LIVE SESSION
-  // =============================
   static async createSession(quizId, professorId, mode = "LIVE") {
-  const sessionCode = generateSessionCode(); // ce folosești tu
+  const sessionCode = generateSessionCode(); 
 
   return prisma.quiz_sessions.create({
     data: {
@@ -19,23 +15,17 @@ class SessionRepository {
       professor_id: Number(professorId),
       session_code: sessionCode,
       status: "active",
-      mode, // 👈 LIVE | ALL
+      mode, 
     },
   });
 }
 
-  // =============================
-  // GET SESSION BY ID
-  // =============================
   static async getSessionById(sessionId) {
     return prisma.quiz_sessions.findUnique({
       where: { id: Number(sessionId) },
     });
   }
 
-  // =============================
-  // CLOSE SESSION
-  // =============================
   static async closeSession(sessionId, professorId) {
     return prisma.quiz_sessions.updateMany({
       where: {
@@ -48,9 +38,6 @@ class SessionRepository {
     });
   }
 
-  // =============================
-  // GET SESSION + QUIZ
-  // =============================
   static async getSessionWithQuiz(sessionId) {
     if (!sessionId) {
       throw new Error("Session ID missing");

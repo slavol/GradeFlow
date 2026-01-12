@@ -24,7 +24,6 @@ export default function ProfessorDashboard() {
 
   const navigate = useNavigate();
 
-  // ---------------- LOAD DATA ----------------
   const loadQuizzes = async () => {
     const res = await api.get("/professor/list");
     setQuizzes(res.data);
@@ -41,7 +40,6 @@ export default function ProfessorDashboard() {
     );
   }, []);
 
-  // ---------------- ACTIONS ----------------
   const deleteQuiz = async (id: number) => {
     if (!confirm("Sigur vrei să ștergi acest quiz?")) return;
     await api.delete(`/professor/delete/${id}`);
@@ -49,14 +47,12 @@ export default function ProfessorDashboard() {
     loadStats();
   };
 
-  // ---------------- UI ----------------
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
       <ProfessorNavbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
 
-        {/* HEADER */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-10">
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
@@ -67,7 +63,6 @@ export default function ProfessorDashboard() {
             </p>
           </div>
 
-          {/* HEADER ACTIONS */}
           <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
             <button
               onClick={() => navigate("/professor/create-quiz")}
@@ -92,14 +87,12 @@ export default function ProfessorDashboard() {
           </div>
         </div>
 
-        {/* STATS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
           <StatCard title="Quiz-uri create" value={stats?.total_quizzes ?? "—"} />
           <StatCard title="Studenți evaluați" value={stats?.total_students ?? "—"} />
           <StatCard title="Întrebări totale" value={stats?.total_questions ?? "—"} />
         </div>
 
-        {/* QUIZZES */}
         <div className="bg-white rounded-2xl shadow p-6 border">
           <h2 className="text-2xl font-semibold mb-6">Quiz-urile tale</h2>
 
@@ -109,7 +102,6 @@ export default function ProfessorDashboard() {
             <p className="text-gray-600">Nu ai creat încă niciun quiz.</p>
           ) : (
             <>
-              {/* DESKTOP */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
@@ -145,7 +137,6 @@ export default function ProfessorDashboard() {
                 </table>
               </div>
 
-              {/* MOBILE */}
               <div className="md:hidden space-y-4">
                 {quizzes.map((q) => (
                   <div
@@ -182,7 +173,6 @@ export default function ProfessorDashboard() {
   );
 }
 
-/* ---------------- COMPONENTS ---------------- */
 
 function StatCard({ title, value }: { title: string; value: any }) {
   return (

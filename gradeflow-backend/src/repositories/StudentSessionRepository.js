@@ -2,9 +2,6 @@ const prisma = require("../../prisma/client");
 
 class StudentSessionRepository {
 
-  // ======================================================
-  // STUDENT JOINS SESSION
-  // ======================================================
   static async joinSession(sessionCode, studentId) {
     const session = await prisma.quiz_sessions.findFirst({
       where: {
@@ -36,9 +33,6 @@ class StudentSessionRepository {
     return { session, studentSession };
   }
 
-  // ======================================================
-  // GET SESSION + STUDENT SESSION
-  // ======================================================
   static async getStudentSession(sessionId, studentId) {
     const session = await prisma.quiz_sessions.findUnique({
       where: { id: Number(sessionId) },
@@ -56,9 +50,6 @@ class StudentSessionRepository {
     return { session, studentSession };
   }
 
-  // ======================================================
-  // GET QUIZ TIME LIMIT
-  // ======================================================
   static async getQuizTimeLimit(sessionId) {
     const res = await prisma.quiz_sessions.findUnique({
       where: { id: Number(sessionId) },
@@ -70,9 +61,6 @@ class StudentSessionRepository {
     return res?.quizzes?.time_limit ?? 0;
   }
 
-  // ======================================================
-  // GET QUIZ QUESTIONS
-  // ======================================================
   static async getQuizQuestions(sessionId) {
     const session = await prisma.quiz_sessions.findUnique({
       where: { id: Number(sessionId) },
@@ -87,9 +75,6 @@ class StudentSessionRepository {
     });
   }
 
-  // ======================================================
-  // GET OPTIONS FOR QUESTION
-  // ======================================================
   static async getQuestionOptions(questionId) {
     return prisma.options.findMany({
       where: { question_id: Number(questionId) },
@@ -97,9 +82,6 @@ class StudentSessionRepository {
     });
   }
 
-  // ======================================================
-  // CHECK IF ANSWERED
-  // ======================================================
   static async hasAnswered(studentSessionId, questionId) {
     const res = await prisma.student_answers.findFirst({
       where: {
@@ -111,9 +93,6 @@ class StudentSessionRepository {
     return !!res;
   }
 
-  // ======================================================
-  // SAVE ANSWER
-  // ======================================================
   static async saveAnswer(studentSessionId, questionId, selectedIds, isCorrect) {
     await prisma.student_answers.create({
       data: {
@@ -125,9 +104,6 @@ class StudentSessionRepository {
     });
   }
 
-  // ======================================================
-  // INCREMENT SCORE
-  // ======================================================
   static async incrementScoreBy(studentSessionId, amount) {
   return prisma.student_sessions.update({
     where: { id: Number(studentSessionId) },
@@ -147,9 +123,6 @@ class StudentSessionRepository {
     });
   }
 
-  // ======================================================
-  // ADVANCE QUESTION INDEX
-  // ======================================================
   static async advanceQuestion(studentSessionId) {
     await prisma.student_sessions.update({
       where: { id: Number(studentSessionId) },
@@ -159,9 +132,6 @@ class StudentSessionRepository {
     });
   }
 
-  // ======================================================
-  // MARK COMPLETED
-  // ======================================================
   static async markCompleted(studentSessionId) {
     await prisma.student_sessions.update({
       where: { id: Number(studentSessionId) },
@@ -172,9 +142,6 @@ class StudentSessionRepository {
     });
   }
 
-  // ======================================================
-  // GET CORRECT OPTION IDS
-  // ======================================================
   static async getCorrectOptionIds(questionId) {
     const res = await prisma.options.findMany({
       where: {
@@ -201,18 +168,12 @@ class StudentSessionRepository {
     return res?.selected_option_ids ?? [];
   }
 
-  // ======================================================
-  // GET STUDENT ANSWERS
-  // ======================================================
   static async getStudentAnswers(studentSessionId) {
     return prisma.student_answers.findMany({
       where: { student_session_id: Number(studentSessionId) },
     });
   }
 
-  // ======================================================
-  // LEADERBOARD
-  // ======================================================
   static async getLeaderboard(sessionId) {
     const rows = await prisma.student_sessions.findMany({
       where: {
@@ -238,9 +199,6 @@ class StudentSessionRepository {
     }));
   }
 
-  // ======================================================
-  // OPTION TEXTS
-  // ======================================================
   static async getOptionTexts(optionIds) {
     if (!optionIds || optionIds.length === 0) return [];
 
@@ -255,9 +213,6 @@ class StudentSessionRepository {
     });
   }
 
-  // ======================================================
-  // STUDENT HISTORY
-  // ======================================================
   static async getStudentHistory(studentId) {
     return prisma.student_sessions.findMany({
       where: { student_id: Number(studentId) },
@@ -304,7 +259,6 @@ class StudentSessionRepository {
   });
 }
 
-// + ADD
 static async getAnswerRow(studentSessionId, questionId) {
   return prisma.student_answers.findFirst({
     where: {
@@ -321,10 +275,8 @@ static async getAnswerRow(studentSessionId, questionId) {
   });
 }
 
-// + ADD
+
 static async saveExplanation(studentSessionId, questionId, explanation) {
-  // nu ai @@unique pe (student_session_id, question_id) în student_answers,
-  // deci folosim updateMany ca să fie safe.
   const r = await prisma.student_answers.updateMany({
     where: {
       student_session_id: Number(studentSessionId),
@@ -336,7 +288,7 @@ static async saveExplanation(studentSessionId, questionId, explanation) {
     },
   });
 
-  return r.count; // câte rânduri a actualizat
+  return r.count; 
 }
 
 }

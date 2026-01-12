@@ -10,7 +10,7 @@ module.exports = {
     const {
       title,
       description,
-      time_limit,     // ⬅️ FOARTE IMPORTANT
+      time_limit,     
       creation_type
     } = req.body;
 

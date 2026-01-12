@@ -5,7 +5,6 @@ module.exports = {
     try {
       const sessionId = req.params.id;
 
-      // 1️⃣ Sesiunea
       const sessionRes = await pool.query(
         `SELECT * FROM quiz_sessions WHERE id = $1`,
         [sessionId]
@@ -16,7 +15,6 @@ module.exports = {
         return res.status(404).json({ message: "Sesiunea nu există." });
       }
 
-      // 2️⃣ Studenții din sesiune
       const studentsRes = await pool.query(
         `SELECT ss.id AS student_session_id, ss.*, u.email 
          FROM student_sessions ss
@@ -28,7 +26,6 @@ module.exports = {
 
       const students = studentsRes.rows;
 
-      // 3️⃣ Răspunsuri complete (cu lista de opțiuni selectate)
       const answersRes = await pool.query(
         `SELECT 
           sa.*, 
@@ -52,7 +49,6 @@ module.exports = {
 
       const answersRaw = answersRes.rows;
 
-      // 4️⃣ Organizăm răspunsurile pe student → întrebare → opțiuni selectate
       const answers = {};
 
       for (const ans of answersRaw) {
@@ -75,7 +71,6 @@ module.exports = {
         });
       }
 
-      // 5️⃣ Analytics pe întrebări
       const analyticsRes = await pool.query(
         `SELECT 
           q.id AS question_id,

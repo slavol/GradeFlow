@@ -12,7 +12,6 @@ export default function StudentNavbar() {
     <nav className="w-full bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
         
-        {/* LOGO */}
         <div
           onClick={() => navigate("/student/dashboard")}
           className="flex items-center gap-2 cursor-pointer"
@@ -27,7 +26,6 @@ export default function StudentNavbar() {
           </span>
         </div>
 
-        {/* ACTIONS */}
         <button
           onClick={logout}
           className="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition text-sm font-semibold"

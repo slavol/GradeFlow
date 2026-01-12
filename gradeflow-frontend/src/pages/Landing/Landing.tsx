@@ -5,7 +5,6 @@ export default function Landing() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0b0b10] text-white">
 
-      {/* ===== MOVING PURPLE BLOBS ===== */}
       <motion.div
         className="absolute w-[700px] h-[700px] bg-purple-700 rounded-full blur-[180px] opacity-40"
         animate={{
@@ -48,7 +47,6 @@ export default function Landing() {
         style={{ top: "30%", left: "40%" }}
       />
 
-      {/* ===== NAVBAR ===== */}
       <header className="relative z-10 max-w-7xl mx-auto px-8 py-6 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <img src="/vite.svg" className="w-10 h-10" />
@@ -71,7 +69,6 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* ===== HERO ===== */}
       <main className="relative z-10 flex flex-col items-center justify-center text-center px-6 mt-32">
         <motion.h1
           initial={{ opacity: 0, y: -40 }}

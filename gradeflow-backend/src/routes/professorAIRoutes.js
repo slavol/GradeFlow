@@ -7,7 +7,6 @@ const upload = require("../middleware/upload");
 
 const ProfessorAIController = require("../controllers/ProfessorAIController");
 
-// DEBUG (te ajută imediat să vezi ce vine în request)
 function debugUpload(req, res, next) {
   console.log("=== AI UPLOAD DEBUG ===");
   console.log("content-type:", req.headers["content-type"]);
@@ -26,8 +25,8 @@ router.post(
   "/generate-questions",
   auth,
   requireRole("professor"),
-  upload.single("file"),     // 🔥 câmpul trebuie să fie EXACT "file"
-  debugUpload,               // 🔥 temporar, până confirmi că vine fișierul
+  upload.single("file"),     
+  debugUpload,               
   ProfessorAIController.generateFromDocument
 );
 

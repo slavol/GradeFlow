@@ -28,7 +28,6 @@ export default function EditQuiz() {
   const [loading, setLoading] = useState(true);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
-  // ---------------- LOAD QUIZ ----------------
   useEffect(() => {
     (async () => {
       const res = await api.get(`/professor/quiz/${id}`);
@@ -45,7 +44,6 @@ export default function EditQuiz() {
     })();
   }, []);
 
-  // ---------------- DRAG & DROP ----------------
   const handleDragStart = (index: number) => setDragIndex(index);
   const handleDrop = (index: number) => {
     if (dragIndex === null) return;
@@ -57,7 +55,6 @@ export default function EditQuiz() {
     setDragIndex(null);
   };
 
-  // ---------------- CRUD ----------------
   const addQuestion = () =>
     setQuestions([
       ...questions,
@@ -107,7 +104,6 @@ export default function EditQuiz() {
         <div className="bg-white rounded-2xl shadow p-6">
           <h1 className="text-3xl font-bold mb-6">Editează Quiz</h1>
 
-          {/* META */}
           <div className="grid md:grid-cols-2 gap-6">
             <input
               className="p-3 border rounded-lg"
@@ -132,7 +128,6 @@ export default function EditQuiz() {
             onChange={(e) => setDescription(e.target.value)}
           />
 
-          {/* QUESTIONS */}
           <div className="flex justify-between items-center mt-8">
             <h2 className="text-xl font-semibold">Întrebări</h2>
             <button
@@ -153,7 +148,6 @@ export default function EditQuiz() {
                 onDrop={() => handleDrop(qi)}
                 className="relative bg-gray-50 border rounded-xl p-5"
               >
-                {/* HANDLE + DELETE */}
                 <div className="flex justify-between items-center mb-4">
                   <span className="cursor-grab text-gray-400">☰</span>
                   <button
@@ -190,7 +184,6 @@ export default function EditQuiz() {
                   </select>
                 </div>
 
-                {/* OPTIONS */}
                 <div className="mt-4 space-y-3">
                   {q.options.map((o, oi) => (
                     <div key={oi} className="flex items-center gap-3">

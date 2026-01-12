@@ -1,13 +1,9 @@
 const mammoth = require("mammoth");
 
-// IMPORTANT:
-// pdf-parse@1.1.1 are un index.js care citește un fișier de test la require()
-// => folosim direct implementarea din lib ca să evităm ENOENT.
 let pdfParse;
 try {
   pdfParse = require("pdf-parse/lib/pdf-parse.js");
 } catch (e) {
-  // fallback (dacă structura diferă)
   const mod = require("pdf-parse");
   pdfParse = mod?.default ?? mod;
 }

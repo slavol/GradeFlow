@@ -17,9 +17,6 @@ export default function ProfessorSessionsHistory() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // =========================
-  // LOAD HISTORY
-  // =========================
   const load = async () => {
     try {
       const res = await api.get("/professor/sessions/history");
@@ -43,9 +40,6 @@ export default function ProfessorSessionsHistory() {
     load();
   }, []);
 
-  // =========================
-  // DELETE SESSION
-  // =========================
   const deleteSession = async (sessionId: number) => {
     if (!confirm("Sigur vrei să ștergi această sesiune?")) return;
 
@@ -57,9 +51,6 @@ export default function ProfessorSessionsHistory() {
     }
   };
 
-  // =========================
-  // LOADING
-  // =========================
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f7f8fc]">
@@ -71,9 +62,6 @@ export default function ProfessorSessionsHistory() {
     );
   }
 
-  // =========================
-  // EMPTY STATE
-  // =========================
   if (sessions.length === 0) {
     return (
       <div className="min-h-screen bg-[#f7f8fc]">
@@ -98,15 +86,11 @@ export default function ProfessorSessionsHistory() {
     );
   }
 
-  // =========================
-  // MAIN UI
-  // =========================
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
       <ProfessorNavbar />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* HEADER */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
             Istoric sesiuni
@@ -116,7 +100,6 @@ export default function ProfessorSessionsHistory() {
           </p>
         </div>
 
-        {/* DESKTOP TABLE */}
         <div className="hidden md:block bg-white rounded-2xl shadow border overflow-hidden">
           <table className="w-full border-collapse">
             <thead className="bg-gray-100 border-b">
@@ -173,7 +156,6 @@ export default function ProfessorSessionsHistory() {
           </table>
         </div>
 
-        {/* MOBILE CARDS */}
         <div className="md:hidden space-y-4">
           {sessions.map((s) => (
             <div
@@ -233,9 +215,6 @@ export default function ProfessorSessionsHistory() {
   );
 }
 
-// =========================
-// STATUS BADGE
-// =========================
 function StatusBadge({
   status,
   inline = false,

@@ -25,34 +25,27 @@ export default function StudentLiveSession() {
 
   const [session, setSession] = useState<any>(null);
 
-  // LIVE
   const [liveQuestion, setLiveQuestion] = useState<Question | null>(null);
   const [liveSelected, setLiveSelected] = useState<number[]>([]);
   const [liveIndex, setLiveIndex] = useState<number>(0);
   const [liveTotal, setLiveTotal] = useState<number>(0);
   const lastLiveQuestionIdRef = useRef<number | null>(null);
 
-  // ALL
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [allAnswers, setAllAnswers] = useState<Record<number, number[]>>({}); // qId -> optionIds[]
   const [submittingAll, setSubmittingAll] = useState(false);
 
-  // common
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // --------- normalize mode from backend ----------
   const currentMode: Mode | null = useMemo(() => {
     const m = (session?.mode as Mode | undefined) ?? null;
     return m;
   }, [session?.mode]);
 
-  // =====================================================
-  // LOAD SESSION
-  // =====================================================
   const loadSession = async () => {
     try {
       const res = await api.get(`/student/session/${sessionId}`);
@@ -62,7 +55,6 @@ export default function StudentLiveSession() {
         return;
       }
 
-      // backend: sometimes returns { mode, session, ... }
       const sess = res.data?.session ?? null;
       const mode: Mode =
         (res.data?.mode as Mode | undefined) ??
@@ -71,7 +63,6 @@ export default function StudentLiveSession() {
 
       setSession({ ...sess, mode });
 
-      // timer
       if (typeof res.data?.time_left === "number") {
         setTimeLeft(res.data.time_left);
       } else {
@@ -79,7 +70,6 @@ export default function StudentLiveSession() {
       }
 
       if (mode === "LIVE") {
-        // backend may return question + options separately
         const q = res.data?.question ?? null;
         const opts: Option[] = Array.isArray(res.data?.options)
           ? res.data.options
@@ -92,10 +82,7 @@ export default function StudentLiveSession() {
         setLiveTotal(total);
 
         if (!q) {
-          // waiting state
           setLiveQuestion(null);
-          // nu-ți forțez reset aici, ca să nu “tremure” UI-ul;
-          // dar dacă nu e întrebare, nu are sens selecția
           setLiveSelected([]);
           lastLiveQuestionIdRef.current = null;
         } else {
@@ -106,7 +93,6 @@ export default function StudentLiveSession() {
             options: Array.isArray(q.options) ? q.options : opts,
           };
 
-          // reset selections DOAR dacă s-a schimbat întrebarea
           if (normalized.id !== lastLiveQuestionIdRef.current) {
             lastLiveQuestionIdRef.current = normalized.id;
             setLiveSelected([]);
@@ -115,11 +101,9 @@ export default function StudentLiveSession() {
           setLiveQuestion(normalized);
         }
 
-        // când intri în LIVE, golești ALL state (evit “map undefined”)
         setAllQuestions([]);
         setAllAnswers({});
       } else {
-        // ALL mode: backend returns questions: [{id,text,question_type,options}]
         const qsRaw = Array.isArray(res.data?.questions) ? res.data.questions : [];
 
         const normalizedAll: Question[] = qsRaw.map((q: any) => ({
@@ -130,8 +114,6 @@ export default function StudentLiveSession() {
         }));
 
         setAllQuestions(normalizedAll);
-
-        // când intri în ALL, golești LIVE state
         setLiveQuestion(null);
         setLiveSelected([]);
         lastLiveQuestionIdRef.current = null;
@@ -146,18 +128,12 @@ export default function StudentLiveSession() {
     }
   };
 
-  // =====================================================
-  // POLLING: doar LIVE
-  // =====================================================
   useEffect(() => {
     loadSession();
 
     let pollId: ReturnType<typeof setInterval> | null = null;
 
-    // după primul load, session poate fi null; polling îl pornești când știi mode
-    // ca fallback, îl pornesc și dacă nu știu încă (LIVE default), dar îl opresc imediat după ce aflăm ALL.
     pollId = setInterval(() => {
-      // dacă e ALL, nu mai pollez
       if ((session?.mode ?? "LIVE") !== "LIVE") return;
       loadSession();
     }, 2500);
@@ -165,12 +141,8 @@ export default function StudentLiveSession() {
     return () => {
       if (pollId) clearInterval(pollId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, session?.mode]);
 
-  // =====================================================
-  // TIMER LOCAL
-  // =====================================================
   useEffect(() => {
     if (timeLeft === null) return;
 
@@ -190,9 +162,6 @@ export default function StudentLiveSession() {
     };
   }, [timeLeft]);
 
-  // =====================================================
-  // LIVE: submit answer
-  // =====================================================
   const submitLiveAnswer = async (questionId: number, selectedOptionIds: number[]) => {
     if (!selectedOptionIds.length) return;
 
@@ -202,8 +171,6 @@ export default function StudentLiveSession() {
         selected_option_ids: selectedOptionIds,
       });
 
-      // imediat după submit, ascund întrebarea ca să nu mai poți da click iar
-      // backend-ul îți va servi următoarea întrebare la polling
       setLiveQuestion(null);
       setLiveSelected([]);
     } catch (e) {
@@ -216,13 +183,11 @@ export default function StudentLiveSession() {
     if (!liveQuestion) return;
 
     if (liveQuestion.question_type === "single") {
-      // single: instant submit
       setLiveSelected([optId]);
       submitLiveAnswer(liveQuestion.id, [optId]);
       return;
     }
 
-    // multiple: doar select/deselect; submit separat
     setLiveSelected((prev) =>
       prev.includes(optId) ? prev.filter((x) => x !== optId) : [...prev, optId]
     );
@@ -233,9 +198,6 @@ export default function StudentLiveSession() {
     submitLiveAnswer(liveQuestion.id, liveSelected);
   };
 
-  // =====================================================
-  // ALL: toggle answer
-  // =====================================================
   const toggleAllAnswer = (q: Question, optId: number) => {
     setAllAnswers((prev) => {
       const current = prev[q.id] ?? [];
@@ -262,8 +224,6 @@ export default function StudentLiveSession() {
     try {
       if (!allQuestions.length) return;
 
-      // backend-ul tău submitAllAnswers așteaptă ARRAY de answers:
-      // [{ question_id, selected_option_ids }]
       const payload = allQuestions
         .map((q) => ({
           question_id: q.id,
@@ -291,21 +251,14 @@ export default function StudentLiveSession() {
     }
   };
 
-  // =====================================================
-  // UI states
-  // =====================================================
   if (loading) return <div className="p-10 text-center">Se încarcă…</div>;
   if (error) return <div className="p-10 text-center text-red-600">{error}</div>;
   if (!session) return <div className="p-10 text-center">Sesiunea nu există.</div>;
 
   const mode: Mode = (session?.mode as Mode) ?? "LIVE";
 
-  // =====================================================
-  // UI
-  // =====================================================
   return (
     <div className="min-h-screen bg-[#f5f7fb]">
-      {/* Top bar */}
       <div className="sticky top-0 z-50 bg-white border-b shadow-sm">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 select-none">
@@ -333,10 +286,8 @@ export default function StudentLiveSession() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="max-w-4xl mx-auto p-6">
         <div className="bg-white rounded-3xl shadow border p-6">
-          {/* LIVE */}
           {mode === "LIVE" && (
             <>
               <div className="flex items-center justify-between mb-5">
@@ -417,7 +368,6 @@ export default function StudentLiveSession() {
             </>
           )}
 
-          {/* ALL */}
           {mode === "ALL" && (
             <>
               <div className="flex items-start justify-between gap-4 mb-6">

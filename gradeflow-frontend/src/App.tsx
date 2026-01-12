@@ -3,12 +3,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleRoute from "./components/RoleRoute";
 
-// Auth
 import Landing from "./pages/Landing/Landing";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 
-// Professor
 import ProfessorDashboard from "./pages/Professor/Dashboard";
 import CreateQuiz from "./pages/Professor/CreateQuiz";
 import ViewQuiz from "./pages/Professor/ViewQuiz";
@@ -19,7 +17,6 @@ import ProfessorSessionsHistory from "./pages/Professor/ProfessorSessionsHistory
 import ProfessorStudentDetails from "./pages/Professor/ProfessorStudentDetails";
 import ProfessorLiveSessionsList from "./pages/Professor/ProfessorSessions"
 
-// Student
 import StudentDashboard from "./pages/Student/StudentDashboard";
 import StudentJoin from "./pages/Student/StudentJoin";
 import StudentLiveSession from "./pages/Student/StudentLiveSession";
@@ -30,21 +27,10 @@ export default function App() {
     <BrowserRouter>
       <Routes>
 
-        {/* ─────────────────────────────────────── */}
-        {/* 🔐 AUTH ROUTES                          */}
-        {/* ─────────────────────────────────────── */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-
-        {/* ─────────────────────────────────────── */}
-        {/* 🧑‍🏫 PROFESSOR ROUTES                   */}
-        {/* ─────────────────────────────────────── */}
-        {/* 🧑‍🏫 PROFESSOR ROUTES */}
-        {/* ─────────────────────────────────────── */}
-        {/* 🧑‍🏫 PROFESSOR ROUTES                   */}
-        {/* ─────────────────────────────────────── */}
 
         <Route
           path="/professor/dashboard"
@@ -123,7 +109,6 @@ export default function App() {
           }
         />
 
-        {/* 🔴 SESIUNI LIVE */}
         <Route
           path="/professor/sessions/live"
           element={
@@ -135,7 +120,6 @@ export default function App() {
           }
         />
 
-        {/* 📜 ISTORIC SESIUNI */}
         <Route
           path="/professor/sessions/history"
           element={
@@ -148,11 +132,6 @@ export default function App() {
         />
 
 
-
-
-        {/* ─────────────────────────────────────── */}
-        {/* 🧑‍🎓 STUDENT ROUTES                     */}
-        {/* ─────────────────────────────────────── */}
         <Route
           path="/student/dashboard"
           element={

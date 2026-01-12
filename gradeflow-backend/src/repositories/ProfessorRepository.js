@@ -2,22 +2,13 @@ const prisma = require("../../prisma/client");
 
 class ProfessorRepository {
 
-  // =============================
-  // GET DASHBOARD STATISTICS
-  // =============================
   static async getDashboardStats(professorId) {
-    // -----------------------------
-    // total quizzes created
-    // -----------------------------
     const totalQuizzes = await prisma.quizzes.count({
       where: {
         professor_id: professorId,
       },
     });
 
-    // -----------------------------
-    // total questions written
-    // -----------------------------
     const totalQuestions = await prisma.questions.count({
       where: {
         quizzes: {
@@ -26,10 +17,6 @@ class ProfessorRepository {
       },
     });
 
-    // -----------------------------
-    // total distinct students graded
-    // (Prisma 5 workaround)
-    // -----------------------------
     const students = await prisma.student_sessions.findMany({
       where: {
         quiz_sessions: {

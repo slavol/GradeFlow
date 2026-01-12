@@ -5,14 +5,12 @@ if (!apiKey) throw new Error("Missing GEMINI_API_KEY in environment");
 
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// dacă tu folosești gemini-2.5-flash, îl punem direct (fără listModels)
 const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 const model = genAI.getGenerativeModel({
   model: MODEL_NAME,
 });
 
-// scoate ```json ... ``` dacă Gemini le pune
 function stripCodeFences(s) {
   return String(s || "")
     .replace(/```json/gi, "")
@@ -20,7 +18,6 @@ function stripCodeFences(s) {
     .trim();
 }
 
-// normalizează output-ul la formatul tău (Question.title / Option.text)
 function normalizeGeminiQuestions(arr) {
   if (!Array.isArray(arr)) return [];
 
@@ -28,7 +25,6 @@ function normalizeGeminiQuestions(arr) {
     const options = Array.isArray(q?.options) ? q.options : [];
 
     return {
-      // Gemini poate da "text" sau "title" – acceptăm ambele
       title: String(q?.title ?? q?.text ?? "").trim(),
       question_type:
         String(q?.question_type ?? "single").toLowerCase() === "multiple"

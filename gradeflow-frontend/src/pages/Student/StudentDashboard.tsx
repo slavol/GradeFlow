@@ -4,12 +4,12 @@ import api from "../../api/api";
 import StudentNavbar from "../../components/StudentNavbar";
 
 interface HistoryItem {
-  id: number; // student_sessions.id
+  id: number; 
   score: number;
   completed: boolean;
   finished_at?: string;
   quiz_sessions: {
-    id: number; // session_id
+    id: number; 
     quizzes: {
       title: string;
     };
@@ -22,9 +22,6 @@ export default function StudentDashboard() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // =============================================
-  // LOAD HISTORY
-  // =============================================
   const loadHistory = async () => {
     try {
       const res = await api.get("/student/session/history");
@@ -47,7 +44,6 @@ export default function StudentDashboard() {
 
       <div className="max-w-6xl mx-auto px-4 py-10">
 
-        {/* HEADER */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900">
             Student Dashboard
@@ -57,7 +53,6 @@ export default function StudentDashboard() {
           </p>
         </div>
 
-        {/* JOIN QUIZ */}
         <div className="bg-white rounded-3xl shadow-lg p-8 border text-center mb-12">
           <h2 className="text-2xl font-bold mb-3">🚀 Alătură-te unui Quiz</h2>
           <p className="text-gray-600 mb-6">
@@ -72,7 +67,6 @@ export default function StudentDashboard() {
           </Link>
         </div>
 
-        {/* HISTORY */}
         <div className="bg-white rounded-3xl shadow-lg p-8 border">
           <h2 className="text-2xl font-bold mb-6">
             📘 Istoric rezultate
@@ -88,7 +82,7 @@ export default function StudentDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {history.map((h) => (
                 <div
-                  key={h.id} // ✅ CHEIE CORECTĂ
+                  key={h.id}
                   className="p-6 bg-gray-50 rounded-2xl border shadow-sm flex flex-col justify-between"
                 >
                   <div>

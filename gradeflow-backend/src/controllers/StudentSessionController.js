@@ -1,8 +1,5 @@
 const StudentSessionRepo = require("../repositories/StudentSessionRepository");
 
-/**
- * Helper: calculează timpul rămas (secunde)
- */
 function computeTimeLeft(session, studentSession) {
   if (!session?.quizzes?.time_limit || session.quizzes.time_limit <= 0) {
     return null;
@@ -20,9 +17,6 @@ function computeTimeLeft(session, studentSession) {
 }
 
 module.exports = {
-  // =====================================================
-  // JOIN SESSION
-  // =====================================================
   async joinSession(req, res) {
     try {
       const { session_code } = req.body;
@@ -48,9 +42,6 @@ module.exports = {
     }
   },
 
-  // =====================================================
-  // GET SESSION DATA (LIVE / ALL)
-  // =====================================================
   async getSessionData(req, res) {
   try {
     const sessionId = req.params.id;
@@ -63,9 +54,6 @@ module.exports = {
 
     const { session, studentSession } = data;
 
-    // ===========================
-    // TIMER (secunde rămase)
-    // ===========================
     let time_left = null;
 
     const timeLimitMinutes = await StudentSessionRepo.getQuizTimeLimit(sessionId);
@@ -81,13 +69,11 @@ module.exports = {
       );
     }
 
-    // dacă timpul a expirat
     if (time_left === 0 && !studentSession.completed) {
       await StudentSessionRepo.markCompleted(studentSession.id);
       return res.json({ finished: true });
     }
 
-    // dacă studentul a terminat
     if (studentSession.completed) {
       return res.json({
         finished: true,
@@ -100,9 +86,6 @@ module.exports = {
       return res.json({ error: "Quiz fără întrebări." });
     }
 
-    // ===========================
-    // 🔴 LIVE MODE
-    // ===========================
     if (session.mode === "LIVE") {
       const index = studentSession.current_index;
 
@@ -129,9 +112,6 @@ module.exports = {
       });
     }
 
-    // ===========================
-    // 🔵 ALL MODE
-    // ===========================
     if (session.mode === "ALL") {
       const formatted = await Promise.all(
         questions.map(async (q) => {
@@ -160,9 +140,6 @@ module.exports = {
   }
 },
 
-  // =====================================================
-  // SUBMIT ANSWER (LIVE)
-  // =====================================================
   async submitAnswer(req, res) {
     try {
       const sessionId = req.params.id;
@@ -204,9 +181,6 @@ module.exports = {
     }
   },
 
-  // =====================================================
-  // SUBMIT ALL (ALL MODE)
-  // =====================================================
   async submitAllAnswers(req, res) {
     try {
       const sessionId = req.params.id;
@@ -249,9 +223,6 @@ module.exports = {
     }
   },
 
-  // =====================================================
-  // RESULTS
-  // =====================================================
   async getResults(req, res) {
     try {
       const sessionId = req.params.id;
@@ -299,9 +270,6 @@ module.exports = {
     }
   },
 
-  // =====================================================
-  // HISTORY
-  // =====================================================
   async getHistory(req, res) {
     try {
       const history = await StudentSessionRepo.getStudentHistory(req.user.id);

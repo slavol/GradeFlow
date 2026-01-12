@@ -13,14 +13,12 @@ module.exports = {
         return res.status(400).json({ message: "Missing or empty questions array" });
       }
 
-      // 1️⃣ Verificăm dacă quiz-ul aparține profesorului
       const quiz = await QuizRepository.findById(quizId, professorId);
 
       if (!quiz) {
         return res.status(403).json({ message: "Nu ai acces la acest quiz." });
       }
 
-      // 2️⃣ Salvăm întrebările + opțiunile
       const savedQuestions = [];
 
       for (const q of questions) {
@@ -30,7 +28,6 @@ module.exports = {
           });
         }
 
-        // Creăm întrebarea
         const question = await QuestionRepository.createQuestion(
           quizId,
           q.title,
@@ -39,7 +36,6 @@ module.exports = {
 
         question.options = [];
 
-        // Opțiunile întrebării
         if (Array.isArray(q.options)) {
           for (const opt of q.options) {
             if (!opt.text) continue;
@@ -57,7 +53,6 @@ module.exports = {
         savedQuestions.push(question);
       }
 
-      // 3️⃣ Returnăm întrebările complete
       return res.json({
         message: "Questions created successfully",
         count: savedQuestions.length,

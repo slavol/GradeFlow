@@ -2,9 +2,6 @@ const QuestionRepository = require("../repositories/QuestionRepository");
 
 module.exports = {
 
-  // ----------------------------------------------------
-  // CREATE SINGLE QUESTION
-  // ----------------------------------------------------
   createQuestion: async (req, res) => {
     try {
       const { quizId } = req.params;
@@ -36,9 +33,7 @@ module.exports = {
     }
   },
 
-  // ----------------------------------------------------
-  // ADD MULTIPLE QUESTIONS AT ONCE
-  // ----------------------------------------------------
+
   addMultipleQuestions: async (req, res) => {
     try {
       const { quizId } = req.params;
@@ -87,9 +82,6 @@ module.exports = {
     }
   },
 
-  // ----------------------------------------------------
-  // LIST QUESTIONS + OPTIONS
-  // ----------------------------------------------------
   listQuestions: async (req, res) => {
     try {
       const { quizId } = req.params;
@@ -103,9 +95,7 @@ module.exports = {
     }
   },
 
-  // ----------------------------------------------------
-  // DELETE QUESTION
-  // ----------------------------------------------------
+
   deleteQuestion: async (req, res) => {
     try {
       const { questionId } = req.params;

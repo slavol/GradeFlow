@@ -5,7 +5,6 @@ const auth = require("../middleware/auth");
 const requireRole = require("../middleware/requireRole");
 const StudentAIController = require("../controllers/StudentAIController");
 
-// POST /ai/student/explain-question
 router.post(
   "/explain-question",
   auth,

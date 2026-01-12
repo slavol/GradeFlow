@@ -1,9 +1,6 @@
 const prisma = require("../../prisma/client");
 
 class OptionRepository {
-  // ----------------------------------------------------
-  // CREATE OPTION
-  // ----------------------------------------------------
   static async createOption(questionId, text, is_correct = false) {
     return prisma.option.create({
       data: {
@@ -14,9 +11,6 @@ class OptionRepository {
     });
   }
 
-  // ----------------------------------------------------
-  // GET OPTIONS FOR A QUESTION
-  // ----------------------------------------------------
   static async getOptionsByQuestionId(questionId) {
     return prisma.option.findMany({
       where: {
@@ -28,9 +22,6 @@ class OptionRepository {
     });
   }
 
-  // ----------------------------------------------------
-  // UPDATE OPTION
-  // ----------------------------------------------------
   static async updateOption(optionId, text, is_correct) {
     return prisma.option.update({
       where: {
@@ -43,9 +34,6 @@ class OptionRepository {
     });
   }
 
-  // ----------------------------------------------------
-  // DELETE OPTION
-  // ----------------------------------------------------
   static async deleteOption(optionId) {
     return prisma.option.delete({
       where: {
@@ -54,9 +42,7 @@ class OptionRepository {
     });
   }
 
-  // ----------------------------------------------------
-  // DELETE ALL OPTIONS OF A QUESTION
-  // ----------------------------------------------------
+
   static async deleteByQuestionId(questionId) {
     return prisma.option.deleteMany({
       where: {

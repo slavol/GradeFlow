@@ -5,7 +5,6 @@ module.exports = {
     try {
       const professorId = req.user.id;
 
-      // 1️⃣ Luăm sesiunile profesorului
       const sessionsRes = await pool.query(
         `SELECT id, quiz_id, session_code, status, created_at
          FROM quiz_sessions
@@ -16,17 +15,14 @@ module.exports = {
 
       const sessions = sessionsRes.rows;
 
-      // 2️⃣ Pentru fiecare sesiune, completăm datele
       for (let s of sessions) {
 
-        // Quiz title
         const quizRes = await pool.query(
           `SELECT title FROM quizzes WHERE id = $1`,
           [s.quiz_id]
         );
         s.quiz_title = quizRes.rows[0] ? quizRes.rows[0].title : "Quiz șters";
 
-        // Participants + AVG score (UN SINGUR QUERY)
         const statsRes = await pool.query(
           `SELECT 
               COUNT(*) AS participants,
