@@ -127,7 +127,7 @@ export default function ViewQuiz() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
             <InfoCard label="⏳ Timp" value={`${quiz.time_limit} min`} />
             <InfoCard label="❓ Întrebări" value={quiz.questions.length} />
-            <InfoCard label="🧠 Tip" value={quiz.creation_type} />
+            <InfoCard label="🧠 Tip" value={quiz.creation_type.toUpperCase()} />
           </div>
 
           <div className="mt-6">
@@ -159,6 +159,29 @@ export default function ViewQuiz() {
               </button>
             </div>
           </div>
+        </div>
+
+         <div className="mt-8 flex flex-col sm:flex-row gap-5 my-10">
+          <button
+            onClick={startSession}
+            className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700"
+          >
+            ▶ Pornește sesiunea ({mode})
+          </button>
+
+          <button
+            onClick={() => navigate(`/professor/edit-quiz/${quiz.id}`)}
+            className="flex-1 px-6 py-3 bg-yellow-500 text-white rounded-xl"
+          >
+            ✏️ Editează quiz
+          </button>
+
+          <button
+            onClick={() => navigate("/professor/dashboard")}
+            className="flex-1 px-6 py-3 bg-gray-300 rounded-xl"
+          >
+            ⬅ Dashboard
+          </button>
         </div>
 
         <div className="bg-white rounded-2xl shadow border p-6">
@@ -202,28 +225,6 @@ export default function ViewQuiz() {
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col sm:flex-row gap-4">
-          <button
-            onClick={startSession}
-            className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700"
-          >
-            ▶ Pornește sesiunea ({mode})
-          </button>
-
-          <button
-            onClick={() => navigate(`/professor/edit-quiz/${quiz.id}`)}
-            className="flex-1 px-6 py-3 bg-yellow-500 text-white rounded-xl"
-          >
-            ✏️ Editează quiz
-          </button>
-
-          <button
-            onClick={() => navigate("/professor/dashboard")}
-            className="flex-1 px-6 py-3 bg-gray-300 rounded-xl"
-          >
-            ⬅ Dashboard
-          </button>
-        </div>
       </div>
     </div>
   );

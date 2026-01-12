@@ -262,7 +262,7 @@ export default function StudentLiveSession() {
       <div className="sticky top-0 z-50 bg-white border-b shadow-sm">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 select-none">
-            <img src="/logo.svg" alt="GradeFlow" className="h-8 w-8" />
+            <img src="/vite.svg" alt="GradeFlow" className="h-8 w-8" />
             <span className="text-xl font-extrabold text-gray-900">GradeFlow</span>
           </div>
 
